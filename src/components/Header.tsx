@@ -18,28 +18,28 @@ export function Header() {
   };
 
   return (
-    <header className="h-16 bg-surface/80 backdrop-blur-md border-b border-border flex items-center px-6 justify-between sticky top-0 z-10 animate-fade-in shadow-sm">
+    <header className="h-16 bg-[#f5f5f7]/70 backdrop-blur-xl flex items-center px-8 justify-between sticky top-0 z-10">
       <div className="flex items-center gap-4">
-        <h2 className="text-lg font-semibold text-slate-800">{getPageTitle()}</h2>
+        <h2 className="text-[22px] font-semibold text-[#1d1d1f] tracking-tight">{getPageTitle()}</h2>
       </div>
 
-      <div className="flex items-center space-x-6">
+      <div className="flex items-center space-x-5">
         <div className="relative group cursor-pointer hidden md:block">
-          <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 group-hover:text-brand-500 transition-colors" />
+          <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#86868b]" />
           <input 
             type="text" 
-            placeholder="Buscar recibos..." 
-            className="pl-10 pr-4 py-1.5 w-64 rounded-full border border-border bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-sm transition-all"
+            placeholder="Buscar..." 
+            className="pl-9 pr-4 py-1.5 w-60 rounded-full border-none bg-[#e8e8ed] focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:shadow-apple text-sm transition-all text-[#1d1d1f]"
           />
         </div>
 
-        <button className="relative text-slate-500 hover:text-brand-600 transition-colors">
+        <button className="relative text-[#86868b] hover:text-[#1d1d1f] transition-colors">
           <Bell size={20} />
-          <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+          <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-brand-500 rounded-full border-2 border-[#f5f5f7]"></span>
         </button>
 
         <div className="flex items-center space-x-2 cursor-pointer group">
-          <div className="w-8 h-8 rounded-full bg-brand-100 border border-brand-200 flex items-center justify-center text-brand-600 group-hover:bg-brand-200 transition-colors">
+          <div className="w-8 h-8 rounded-full bg-white shadow-sm border border-[#d2d2d7]/50 flex items-center justify-center text-[#1d1d1f] group-hover:shadow-apple transition-all">
             <User size={16} />
           </div>
         </div>
