@@ -7,9 +7,11 @@ import { createClient } from '@/utils/supabase/client';
 interface TransactionFormProps {
   type: 'ingreso' | 'egreso';
   onClose: () => void;
+  onSuccess: () => void;
+  initialData?: any;
 }
 
-export function TransactionForm({ type, onClose }: TransactionFormProps) {
+export function TransactionForm({ type, onClose, onSuccess, initialData }: TransactionFormProps) {
   const isIngreso = type === 'ingreso';
   const supabase = createClient();
   
@@ -20,13 +22,14 @@ export function TransactionForm({ type, onClose }: TransactionFormProps) {
   const [errorMsg, setErrorMsg] = useState('');
 
   // Form values
-  const [monto, setMonto] = useState('');
-  const [enUsd, setEnUsd] = useState(false);
-  const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
-  const [categoriaId, setCategoriaId] = useState('');
-  const [metodoPago, setMetodoPago] = useState('efectivo');
-  const [descripcion, setDescripcion] = useState('');
-  const [numeroRecibo, setNumeroRecibo] = useState('');
+  const [monto, setMonto] = useState(initialData ? (initialData.monto_usd ? initialData.monto_usd.toString() : initialData.monto_hnl.toString()) : '');
+  const [enUsd, setEnUsd] = useState(initialData ? !!initialData.monto_usd : false);
+  const [fecha, setFecha] = useState(initialData ? initialData.fecha : new Date().toISOString().split('T')[0]);
+  const [categoriaId, setCategoriaId] = useState(initialData ? initialData.categoria_id : '');
+  const [metodoPago, setMetodoPago] = useState(initialData ? initialData.metodo_pago : 'efectivo');
+  const [descripcion, setDescripcion] = useState(initialData ? initialData.descripcion : '');
+  const [numeroRecibo, setNumeroRecibo] = useState(initialData ? (initialData.numero_recibo || '') : '');
+  const [comprobanteFile, setComprobanteFile] = useState<File | null>(null);
 
   useEffect(() => {
     async function loadCategories() {
@@ -60,6 +63,30 @@ export function TransactionForm({ type, onClose }: TransactionFormProps) {
       return;
     }
 
+    let comprobante_url = initialData?.comprobante_url || null;
+
+    if (comprobanteFile) {
+      const fileExt = comprobanteFile.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+      const filePath = `transacciones/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('comprobantes')
+        .upload(filePath, comprobanteFile);
+
+      if (uploadError) {
+        setErrorMsg('Error subiendo comprobante. Verifica que el bucket "comprobantes" exista en Supabase. Detalles: ' + uploadError.message);
+        setLoading(false);
+        return;
+      }
+
+      const { data: publicUrlData } = supabase.storage
+        .from('comprobantes')
+        .getPublicUrl(filePath);
+
+      comprobante_url = publicUrlData.publicUrl;
+    }
+
     const payload = {
       tipo: type,
       monto_hnl: enUsd ? 0 : parseFloat(monto), // Lógica simplificada
@@ -69,18 +96,46 @@ export function TransactionForm({ type, onClose }: TransactionFormProps) {
       metodo_pago: metodoPago,
       descripcion,
       numero_recibo: numeroRecibo || null,
+      comprobante_url,
       estado: 'pagado', 
     };
 
-    const { error } = await supabase.from('transacciones').insert([payload]);
+    let errorResult;
+
+    if (initialData) {
+      // ACTUALIZAR (UPDATE)
+      const { error: updateError } = await supabase.from('transacciones').update(payload).eq('id', initialData.id);
+      errorResult = updateError;
+      
+      // Guardar auditoría si fue exitoso
+      if (!updateError) {
+        const { error: auditError } = await supabase.from('auditoria').insert([{
+          tabla: 'transacciones',
+          registro_id: initialData.id,
+          campo: 'edicion_completa',
+          valor_anterior: JSON.stringify(initialData),
+          valor_nuevo: JSON.stringify(payload)
+          // Omitimos usuario_id temporalmente
+        }]);
+        
+        if (auditError) {
+          console.error("Error guardando auditoria de edición:", auditError);
+          alert(`La transacción se actualizó, pero falló la auditoría: ${auditError.message}`);
+        }
+      }
+    } else {
+      // CREAR (INSERT)
+      const { error: insertError } = await supabase.from('transacciones').insert([payload]);
+      errorResult = insertError;
+    }
 
     setLoading(false);
 
-    if (error) {
-      console.error(error);
-      setErrorMsg(error.message);
+    if (errorResult) {
+      console.error(errorResult);
+      setErrorMsg(errorResult.message);
     } else {
-      onClose(); // El padre se encargará de refrescar los datos
+      onSuccess();
     }
   };
 
@@ -90,9 +145,9 @@ export function TransactionForm({ type, onClose }: TransactionFormProps) {
         {/* Header */}
         <div className={`px-6 py-4 border-b border-border flex justify-between items-center ${isIngreso ? 'bg-green-50' : 'bg-red-50'}`}>
           <h2 className={`text-xl font-bold ${isIngreso ? 'text-green-700' : 'text-red-700'}`}>
-            Registrar Nuevo {isIngreso ? 'Ingreso' : 'Egreso'}
+            {initialData ? 'Editar' : 'Registrar Nuevo'} {isIngreso ? 'Ingreso' : 'Egreso'}
           </h2>
-          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-200/50 transition-colors">
+          <button onClick={onClose} type="button" className="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-200/50 transition-colors">
             <X size={20} />
           </button>
         </div>
@@ -210,14 +265,25 @@ export function TransactionForm({ type, onClose }: TransactionFormProps) {
             </div>
           </div>
 
-          {/* Upload Comprobante Placeholder */}
+          {/* Upload Comprobante */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">Comprobante Adjunto (Opcional)</label>
-            <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer group">
-              <UploadCloud size={32} className="text-slate-400 group-hover:text-brand-500 mb-2" />
-              <p className="text-sm font-medium text-slate-600">Haz clic para subir un comprobante</p>
+            <div className="relative border-2 border-dashed border-slate-200 rounded-xl p-6 flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 transition-colors group">
+              <input 
+                type="file" 
+                accept="image/png, image/jpeg, application/pdf"
+                onChange={(e) => setComprobanteFile(e.target.files?.[0] || null)}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              />
+              <UploadCloud size={32} className={`${comprobanteFile ? 'text-brand-500' : 'text-slate-400 group-hover:text-brand-500'} mb-2`} />
+              <p className="text-sm font-medium text-slate-600">
+                {comprobanteFile ? comprobanteFile.name : 'Haz clic para subir un comprobante'}
+              </p>
               <p className="text-xs text-slate-400 mt-1">PNG, JPG, o PDF (Max. 5MB)</p>
             </div>
+            {initialData?.comprobante_url && !comprobanteFile && (
+              <p className="text-xs text-green-600 mt-2 font-medium">✓ Esta transacción ya tiene un comprobante guardado.</p>
+            )}
           </div>
 
           {/* Footer Actions */}

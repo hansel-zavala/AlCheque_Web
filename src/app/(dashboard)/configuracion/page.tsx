@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Loader2, AlertCircle } from 'lucide-react';
+import { Plus, Edit2, Trash2, Loader2, AlertCircle, X, Check } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 
 type Categoria = {
@@ -23,6 +23,11 @@ export default function CategoriasPage() {
   const [nuevaCatNombre, setNuevaCatNombre] = useState('');
   const [nuevaCatTipo, setNuevaCatTipo] = useState<'ingreso' | 'egreso'>('ingreso');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Estados para edición inline
+  const [editingCatId, setEditingCatId] = useState<string | null>(null);
+  const [editCatNombre, setEditCatNombre] = useState('');
+  const [editCatTipo, setEditCatTipo] = useState<'ingreso' | 'egreso'>('ingreso');
 
   const fetchCategorias = async () => {
     setLoading(true);
@@ -89,6 +94,52 @@ export default function CategoriasPage() {
       setErrorMsg(`Error actualizando: ${error.message}`);
       // Revertir en caso de error
       setCategorias(categorias.map(c => c.id === cat.id ? { ...c, activa: cat.activa } : c));
+    }
+  };
+
+  const handleEditClick = async (cat: Categoria) => {
+    setErrorMsg('');
+    
+    // 1. Verificar si existen transacciones asociadas a esta categoría
+    const { count, error } = await supabase
+      .from('transacciones')
+      .select('id', { count: 'exact', head: true })
+      .eq('categoria_id', cat.id);
+
+    if (error) {
+      setErrorMsg(`Error verificando historial: ${error.message}`);
+      return;
+    }
+
+    // 2. Si existe al menos 1 transacción, bloqueamos la edición
+    if (count && count > 0) {
+      setErrorMsg(`Bloqueo de seguridad: No puedes editar "${cat.nombre}" porque ya tiene transacción(es) histórica(s). Por favor desactívala y crea una nueva para no alterar el historial contable.`);
+      return;
+    }
+
+    // 3. Si está limpia (count = 0), permitimos la edición inline
+    setEditingCatId(cat.id);
+    setEditCatNombre(cat.nombre);
+    setEditCatTipo(cat.tipo);
+  };
+
+  const handleUpdateCategoria = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editCatNombre.trim() || !editingCatId) return;
+
+    setErrorMsg('');
+    const { error } = await supabase
+      .from('categorias')
+      .update({ nombre: editCatNombre, tipo: editCatTipo })
+      .eq('id', editingCatId);
+
+    if (error) {
+      setErrorMsg(`Error actualizando categoría: ${error.message}`);
+    } else {
+      setCategorias(categorias.map(c => 
+        c.id === editingCatId ? { ...c, nombre: editCatNombre, tipo: editCatTipo } : c
+      ));
+      setEditingCatId(null);
     }
   };
 
@@ -195,30 +246,69 @@ export default function CategoriasPage() {
             ) : (
               filteredCategorias.map((cat) => (
                 <tr key={cat.id} className="hover:bg-slate-50 transition-colors group">
-                  <td className="p-4 font-medium text-slate-800">{cat.nombre}</td>
-                  <td className="p-4">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
-                      ${cat.tipo === 'ingreso' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}
-                    `}>
-                      {cat.tipo}
-                    </span>
-                  </td>
-                  <td className="p-4">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                      ${cat.activa ? 'bg-slate-100 text-slate-800' : 'bg-slate-100 text-slate-400'}
-                    `}>
-                      {cat.activa ? 'Activa' : 'Inactiva'}
-                    </span>
-                  </td>
-                  <td className="p-4 text-right space-x-2">
-                    <button 
-                      onClick={() => handleToggleEstado(cat)}
-                      className={`transition-colors p-1.5 rounded-md ${cat.activa ? 'text-red-400 hover:bg-red-50 hover:text-red-600' : 'text-green-400 hover:bg-green-50 hover:text-green-600'}`} 
-                      title={cat.activa ? "Desactivar" : "Activar"}
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </td>
+                  {editingCatId === cat.id ? (
+                    <td colSpan={4} className="p-2">
+                      <form onSubmit={handleUpdateCategoria} className="flex items-center gap-3 bg-white p-2 rounded-lg border border-brand-200 shadow-sm">
+                        <input 
+                          type="text" 
+                          required
+                          value={editCatNombre}
+                          onChange={(e) => setEditCatNombre(e.target.value)}
+                          className="flex-1 px-3 py-1.5 rounded-md border border-border bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-sm"
+                        />
+                        <select 
+                          value={editCatTipo}
+                          onChange={(e) => setEditCatTipo(e.target.value as 'ingreso'|'egreso')}
+                          className="w-32 px-3 py-1.5 rounded-md border border-border bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-sm"
+                        >
+                          <option value="ingreso">Ingreso</option>
+                          <option value="egreso">Egreso</option>
+                        </select>
+                        <div className="flex items-center space-x-1 ml-auto">
+                          <button type="submit" className="p-1.5 text-green-600 hover:bg-green-50 rounded-md transition-colors" title="Guardar Cambios">
+                            <Check size={18} />
+                          </button>
+                          <button type="button" onClick={() => setEditingCatId(null)} className="p-1.5 text-slate-400 hover:bg-slate-100 rounded-md transition-colors" title="Cancelar">
+                            <X size={18} />
+                          </button>
+                        </div>
+                      </form>
+                    </td>
+                  ) : (
+                    <>
+                      <td className="p-4 font-medium text-slate-800">{cat.nombre}</td>
+                      <td className="p-4">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
+                          ${cat.tipo === 'ingreso' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}
+                        `}>
+                          {cat.tipo}
+                        </span>
+                      </td>
+                      <td className="p-4">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                          ${cat.activa ? 'bg-slate-100 text-slate-800' : 'bg-slate-100 text-slate-400'}
+                        `}>
+                          {cat.activa ? 'Activa' : 'Inactiva'}
+                        </span>
+                      </td>
+                      <td className="p-4 text-right space-x-2">
+                        <button 
+                          onClick={() => handleEditClick(cat)}
+                          className="text-slate-400 hover:text-brand-600 transition-colors p-1.5 rounded-md hover:bg-brand-50" 
+                          title="Editar"
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                        <button 
+                          onClick={() => handleToggleEstado(cat)}
+                          className={`transition-colors p-1.5 rounded-md ${cat.activa ? 'text-red-400 hover:bg-red-50 hover:text-red-600' : 'text-green-400 hover:bg-green-50 hover:text-green-600'}`} 
+                          title={cat.activa ? "Desactivar" : "Activar"}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </td>
+                    </>
+                  )}
                 </tr>
               ))
             )}
