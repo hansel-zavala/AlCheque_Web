@@ -13,6 +13,8 @@ export default function DashboardPage() {
   const [saldoNeto, setSaldoNeto] = useState(0);
   const [recentTrans, setRecentTrans] = useState<any[]>([]);
   const [chartData, setChartData] = useState<any[]>([]);
+  const [vencimientos, setVencimientos] = useState<any[]>([]);
+  const [totalPorCobrar, setTotalPorCobrar] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -89,11 +91,35 @@ export default function DashboardPage() {
           }
         });
 
-        // Convert object to sorted array
         const finalChartData = Object.values(chartAgg).sort((a: any, b: any) => a.sort - b.sort);
         setChartData(finalChartData);
       }
       
+      // Fetch Vencimientos
+      const todayStr = new Date().toISOString().split('T')[0];
+      const nextWeek = new Date();
+      nextWeek.setDate(nextWeek.getDate() + 7);
+      const nextWeekStr = nextWeek.toISOString().split('T')[0];
+
+      const { data: cuentasData } = await supabase
+        .from('cuentas_por_cobrar')
+        .select('id, monto_total, monto_pagado, fecha_vencimiento, pacientes(nombre_completo)')
+        .eq('estado', 'al_dia') // Only fetch those not paid yet, our UI sets 'pagada'
+        .lte('fecha_vencimiento', nextWeekStr)
+        .order('fecha_vencimiento', { ascending: true })
+        .limit(5);
+
+      if (cuentasData) {
+        setVencimientos(cuentasData);
+      }
+
+      // Fetch Total por Cobrar
+      const { data: allCuentas } = await supabase.from('cuentas_por_cobrar').select('monto_total, monto_pagado').neq('estado', 'pagada');
+      if (allCuentas) {
+        const total = allCuentas.reduce((acc, c) => acc + (parseFloat(c.monto_total) - parseFloat(c.monto_pagado)), 0);
+        setTotalPorCobrar(total);
+      }
+
       setLoading(false);
     }
 
@@ -116,23 +142,24 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Top Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-surface p-6 rounded-xl border border-border shadow-sm transition-transform hover:-translate-y-1 hover:shadow-md">
-          <h3 className="text-sm font-medium text-slate-500">Ingresos del Mes</h3>
-          <p className="text-3xl font-bold mt-2 text-green-600">{formatMoney(ingresosMes)}</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="bg-surface p-6 rounded-2xl border border-border shadow-sm transition-all hover:shadow-md border-b-4 border-b-green-500">
+          <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Ingresos (Mes)</h3>
+          <p className="text-3xl font-black mt-2 text-green-600 font-mono">{formatMoney(ingresosMes)}</p>
         </div>
-        <div className="bg-surface p-6 rounded-xl border border-border shadow-sm transition-transform hover:-translate-y-1 hover:shadow-md">
-          <h3 className="text-sm font-medium text-slate-500">Egresos del Mes</h3>
-          <p className="text-3xl font-bold mt-2 text-red-600">{formatMoney(egresosMes)}</p>
+        <div className="bg-surface p-6 rounded-2xl border border-border shadow-sm transition-all hover:shadow-md border-b-4 border-b-red-500">
+          <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Egresos (Mes)</h3>
+          <p className="text-3xl font-black mt-2 text-red-600 font-mono">{formatMoney(egresosMes)}</p>
         </div>
-        <div className="bg-surface p-6 rounded-xl border border-brand-200 shadow-sm transition-transform hover:-translate-y-1 hover:shadow-md relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-brand-50 rounded-bl-full -mr-16 -mt-16 z-0"></div>
-          <div className="relative z-10">
-            <h3 className="text-sm font-medium text-slate-500">Saldo Neto (Mes Actual)</h3>
-            <p className={`text-3xl font-bold mt-2 ${saldoNeto >= 0 ? 'text-brand-600' : 'text-red-600'}`}>
-              {formatMoney(saldoNeto)}
-            </p>
-          </div>
+        <div className="bg-surface p-6 rounded-2xl border border-border shadow-sm transition-all hover:shadow-md border-b-4 border-b-brand-500">
+          <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Saldo Neto</h3>
+          <p className={`text-3xl font-black mt-2 font-mono ${saldoNeto >= 0 ? 'text-brand-600' : 'text-red-600'}`}>
+            {formatMoney(saldoNeto)}
+          </p>
+        </div>
+        <div className="bg-surface p-6 rounded-2xl border border-border shadow-sm transition-all hover:shadow-md border-b-4 border-b-orange-500">
+          <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Total por Cobrar</h3>
+          <p className="text-3xl font-black mt-2 text-orange-600 font-mono">{formatMoney(totalPorCobrar)}</p>
         </div>
       </div>
 
@@ -151,7 +178,7 @@ export default function DashboardPage() {
                 <Tooltip 
                   cursor={{fill: '#F1F5F9'}} 
                   contentStyle={{borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'}}
-                  formatter={(value: number) => [formatMoney(value), '']} 
+                  formatter={(value: any) => [formatMoney(value as number), '']} 
                 />
                 <Bar dataKey="ingresos" fill="#10B981" radius={[4, 4, 0, 0]} name="Ingresos" maxBarSize={50} />
                 <Bar dataKey="egresos" fill="#EF4444" radius={[4, 4, 0, 0]} name="Egresos" maxBarSize={50} />
@@ -197,8 +224,38 @@ export default function DashboardPage() {
             <ArrowRight size={16} />
           </Link>
         </div>
-
       </div>
+
+      {/* Vencimientos Widget */}
+      <div className="grid grid-cols-1 gap-6">
+        <div className="bg-surface p-6 rounded-xl border border-red-100 shadow-sm">
+          <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+            Alertas de Cobro (Próximos 7 días)
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+            {vencimientos.length === 0 ? (
+              <p className="text-sm text-slate-500 col-span-full">No hay cuentas por vencer en los próximos 7 días.</p>
+            ) : (
+              vencimientos.map(v => {
+                const saldo = parseFloat(v.monto_total) - parseFloat(v.monto_pagado);
+                const isVencida = v.fecha_vencimiento < new Date().toISOString().split('T')[0];
+                return (
+                  <div key={v.id} className={`p-4 rounded-xl border ${isVencida ? 'bg-red-50 border-red-200' : 'bg-orange-50 border-orange-200'}`}>
+                    <p className="font-semibold text-slate-800 truncate" title={v.pacientes?.nombre_completo}>{v.pacientes?.nombre_completo}</p>
+                    <p className={`text-xs font-medium mt-1 ${isVencida ? 'text-red-600' : 'text-orange-600'}`}>
+                      {isVencida ? 'Vencida el' : 'Vence el'} {new Date(v.fecha_vencimiento).toLocaleDateString('es-HN')}
+                    </p>
+                    <p className="font-mono font-bold mt-2 text-slate-800">L {saldo.toFixed(2)}</p>
+                    <Link href="/cuentas" className="text-xs font-medium text-brand-600 mt-3 inline-block hover:underline">Gestionar Cobro &rarr;</Link>
+                  </div>
+                )
+              })
+            )}
+          </div>
+        </div>
+      </div>
+
     </div>
   );
 }

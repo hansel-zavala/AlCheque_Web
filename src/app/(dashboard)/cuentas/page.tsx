@@ -1,71 +1,196 @@
 'use client';
 
-import { Search, AlertCircle, CheckCircle, HandCoins } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, AlertCircle, CheckCircle, HandCoins, Plus, Loader2, CalendarClock, Receipt, Tag } from 'lucide-react';
+import { createClient } from '@/utils/supabase/client';
+import { CuentaModal } from '@/components/CuentaModal';
+import { AbonoModal } from '@/components/AbonoModal';
 
 export default function CuentasPage() {
+  const supabase = createClient();
+  const [cuentas, setCuentas] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<'todas' | 'pendientes' | 'vencidas'>('todas');
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const [isCuentaModalOpen, setIsCuentaModalOpen] = useState(false);
+  const [isAbonoModalOpen, setIsAbonoModalOpen] = useState(false);
+  const [selectedCuenta, setSelectedCuenta] = useState<any>(null);
+
+  useEffect(() => {
+    fetchCuentas();
+  }, []);
+
+  const fetchCuentas = async () => {
+    setLoading(true);
+    const { data } = await supabase
+      .from('cuentas_por_cobrar')
+      .select(`
+        *,
+        pacientes(nombre_completo, codigo_interno),
+        servicios(nombre)
+      `)
+      .order('fecha_vencimiento', { ascending: true });
+
+    if (data) {
+      // Determinar si están vencidas basado en la fecha
+      const today = new Date().toISOString().split('T')[0];
+      const procesadas = data.map(c => {
+        let estadoCalculado = c.estado;
+        if (c.estado !== 'pagada' && c.fecha_vencimiento < today) {
+          estadoCalculado = 'vencida';
+        }
+        return { ...c, estadoCalculado };
+      });
+      setCuentas(procesadas);
+    }
+    setLoading(false);
+  };
+
+  const handleOpenAbono = (cuenta: any) => {
+    setSelectedCuenta(cuenta);
+    setIsAbonoModalOpen(true);
+  };
+
+  const filteredCuentas = cuentas.filter(c => {
+    const matchesSearch = c.pacientes?.nombre_completo.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          c.pacientes?.codigo_interno.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          c.notas?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    if (filter === 'pendientes') return matchesSearch && c.estadoCalculado !== 'pagada';
+    if (filter === 'vencidas') return matchesSearch && c.estadoCalculado === 'vencida';
+    return matchesSearch;
+  });
+
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center bg-surface p-4 rounded-xl shadow-sm border border-border">
-        <div className="relative w-72">
-          <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
-          <input 
-            type="text" 
-            placeholder="Buscar por paciente o expediente..." 
-            className="pl-10 pr-4 py-2 w-full rounded-lg border border-border bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-sm transition-all"
-          />
+    <div className="max-w-7xl mx-auto space-y-6 animate-fade-in">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-surface p-4 rounded-xl shadow-sm border border-border gap-4">
+        
+        <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+          <div className="relative w-full sm:w-72">
+            <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
+            <input 
+              type="text" 
+              value={searchTerm}
+              onChange={e=>setSearchTerm(e.target.value)}
+              placeholder="Buscar paciente..." 
+              className="pl-10 pr-4 py-2 w-full rounded-lg border border-border bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-sm transition-all"
+            />
+          </div>
+
+          <div className="flex bg-slate-100 p-1 rounded-lg">
+            <button onClick={() => setFilter('todas')} className={`px-4 py-1 rounded-md text-sm font-medium transition-colors ${filter === 'todas' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Todas</button>
+            <button onClick={() => setFilter('pendientes')} className={`px-4 py-1 rounded-md text-sm font-medium transition-colors ${filter === 'pendientes' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Pendientes</button>
+            <button onClick={() => setFilter('vencidas')} className={`px-4 py-1 rounded-md text-sm font-medium transition-colors ${filter === 'vencidas' ? 'bg-red-50 text-red-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Vencidas</button>
+          </div>
         </div>
+
+        <button 
+          onClick={() => setIsCuentaModalOpen(true)}
+          className="flex items-center space-x-2 bg-slate-900 text-white px-5 py-2.5 rounded-xl hover:bg-slate-800 transition-all shadow-sm shrink-0 w-full md:w-auto justify-center"
+        >
+          <Plus size={18} />
+          <span className="font-medium text-sm">Nueva Cuenta</span>
+        </button>
       </div>
 
       <div className="bg-surface rounded-xl shadow-sm border border-border overflow-hidden">
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-slate-50 border-b border-border text-slate-500 text-sm">
-              <th className="p-4 font-medium">Expediente</th>
-              <th className="p-4 font-medium">Concepto</th>
-              <th className="p-4 font-medium text-right">Monto Total</th>
-              <th className="p-4 font-medium text-right">Pagado</th>
-              <th className="p-4 font-medium text-center">Estado</th>
-              <th className="p-4 font-medium text-right w-32">Acciones</th>
+              <th className="p-4 font-semibold">Paciente</th>
+              <th className="p-4 font-semibold">Concepto / Vencimiento</th>
+              <th className="p-4 font-semibold text-right">Deuda Total</th>
+              <th className="p-4 font-semibold text-right">Saldo Restante</th>
+              <th className="p-4 font-semibold text-center w-32">Estado</th>
+              <th className="p-4 font-semibold text-right w-24">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {/* Ejemplo Vencida */}
-            <tr className="hover:bg-slate-50 transition-colors group">
-              <td className="p-4 font-medium text-slate-800">EXP-1045</td>
-              <td className="p-4 text-slate-600">Mensualidad Marzo 2026</td>
-              <td className="p-4 text-right font-medium">L 2,500.00</td>
-              <td className="p-4 text-right text-slate-500">L 1,000.00</td>
-              <td className="p-4 text-center">
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
-                  <AlertCircle size={12} className="mr-1" /> Vencida
-                </span>
-              </td>
-              <td className="p-4 text-right space-x-2">
-                <button className="text-slate-400 hover:text-brand-600 transition-colors p-1 rounded-md hover:bg-brand-50" title="Abonar">
-                  <HandCoins size={16} />
-                </button>
-              </td>
-            </tr>
-            {/* Ejemplo Al Día */}
-            <tr className="hover:bg-slate-50 transition-colors group">
-              <td className="p-4 font-medium text-slate-800">EXP-2012</td>
-              <td className="p-4 text-slate-600">Mensualidad Abril 2026</td>
-              <td className="p-4 text-right font-medium">L 1,500.00</td>
-              <td className="p-4 text-right text-slate-500">L 1,500.00</td>
-              <td className="p-4 text-center">
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                  <CheckCircle size={12} className="mr-1" /> Al Día
-                </span>
-              </td>
-              <td className="p-4 text-right space-x-2">
-                <button className="text-slate-400 hover:text-brand-600 transition-colors p-1 rounded-md hover:bg-brand-50" title="Visualizar Cuenta">
-                  <HandCoins size={16} />
-                </button>
-              </td>
-            </tr>
+            {loading ? (
+              <tr>
+                <td colSpan={6} className="p-12 text-center text-slate-400">
+                  <Loader2 size={28} className="animate-spin mx-auto mb-3 text-brand-500" />
+                  Cargando cuentas...
+                </td>
+              </tr>
+            ) : filteredCuentas.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="p-12 text-center text-slate-500">
+                  <Receipt size={40} className="mx-auto mb-3 text-slate-300" />
+                  <p className="text-lg font-medium text-slate-700">No hay cuentas por cobrar</p>
+                  <p className="text-sm">Genera una nueva cuenta manualmente o asigna un servicio.</p>
+                </td>
+              </tr>
+            ) : (
+              filteredCuentas.map((c) => {
+                const saldo = parseFloat(c.monto_total) - parseFloat(c.monto_pagado);
+                return (
+                  <tr key={c.id} className="hover:bg-slate-50 transition-colors group">
+                    <td className="p-4">
+                      <p className="font-medium text-slate-800">{c.pacientes?.nombre_completo}</p>
+                      <p className="text-xs text-slate-500 font-mono">{c.pacientes?.codigo_interno}</p>
+                    </td>
+                    <td className="p-4">
+                      <p className="text-sm text-slate-700 font-medium">{c.notas || c.servicios?.nombre || 'Cobro Manual'}</p>
+                      <p className="text-xs text-slate-500 flex items-center gap-1 mt-1">
+                        <CalendarClock size={12}/> Vence: {new Date(c.fecha_vencimiento).toLocaleDateString()}
+                      </p>
+                    </td>
+                    <td className="p-4 text-right">
+                      <p className="font-medium text-slate-800 font-mono">L {parseFloat(c.monto_total).toFixed(2)}</p>
+                      {c.descuento_valor > 0 && (
+                        <p className="text-xs text-brand-600 flex items-center justify-end gap-1"><Tag size={10}/> Descuento aplicado</p>
+                      )}
+                    </td>
+                    <td className="p-4 text-right">
+                      <p className={`font-bold font-mono ${saldo > 0 ? 'text-brand-600' : 'text-green-600'}`}>L {saldo.toFixed(2)}</p>
+                    </td>
+                    <td className="p-4 text-center">
+                      {c.estadoCalculado === 'pagada' ? (
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                          <CheckCircle size={14} className="mr-1" /> Pagada
+                        </span>
+                      ) : c.estadoCalculado === 'vencida' ? (
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                          <AlertCircle size={14} className="mr-1" /> Vencida
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                          <CalendarClock size={14} className="mr-1" /> Al Día
+                        </span>
+                      )}
+                    </td>
+                    <td className="p-4 text-right space-x-2">
+                      <button 
+                        onClick={() => handleOpenAbono(c)}
+                        disabled={c.estadoCalculado === 'pagada'}
+                        className={`transition-colors p-2 rounded-lg font-medium text-sm flex items-center gap-2 justify-end w-full ${c.estadoCalculado === 'pagada' ? 'text-slate-300 cursor-not-allowed' : 'text-brand-600 hover:bg-brand-50 hover:text-brand-700'}`} 
+                        title="Registrar Abono"
+                      >
+                        <HandCoins size={18} /> Abonar
+                      </button>
+                    </td>
+                  </tr>
+                )
+              })
+            )}
           </tbody>
         </table>
       </div>
+
+      <CuentaModal 
+        isOpen={isCuentaModalOpen} 
+        onClose={() => setIsCuentaModalOpen(false)}
+        onSuccess={fetchCuentas}
+      />
+
+      <AbonoModal
+        isOpen={isAbonoModalOpen}
+        onClose={() => setIsAbonoModalOpen(false)}
+        cuenta={selectedCuenta}
+        onSuccess={fetchCuentas}
+      />
     </div>
   );
 }

@@ -279,18 +279,66 @@ export function PacienteDrawer({ isOpen, onClose, pacienteId, onSuccess }: Pacie
                   {serviciosAsignados.length === 0 ? (
                     <p className="text-sm text-slate-500 italic bg-white p-4 rounded-xl border border-slate-100 text-center">No tiene ningún servicio asignado.</p>
                   ) : (
-                    serviciosAsignados.map(ps => (
-                      <div key={ps.id} className="bg-white p-4 rounded-xl border border-slate-200 flex justify-between items-center shadow-sm">
-                        <div>
-                          <p className="font-semibold text-slate-800">{ps.servicios?.nombre}</p>
-                          <p className="text-xs text-slate-500 mt-0.5">Cobro programado: L {ps.servicios?.costo_hnl}</p>
-                          <p className="text-xs text-brand-600 font-medium mt-1">Siguiente cobro: {new Date(ps.fecha_proximo_cobro).toLocaleDateString()}</p>
+                    serviciosAsignados.map(ps => {
+                      const isDue = new Date(ps.fecha_proximo_cobro) <= new Date();
+                      return (
+                        <div key={ps.id} className={`bg-white p-4 rounded-xl border ${isDue ? 'border-orange-300 shadow-sm' : 'border-slate-200 shadow-sm'} flex justify-between items-center transition-all`}>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="font-semibold text-slate-800">{ps.servicios?.nombre}</p>
+                              {isDue && <span className="bg-orange-100 text-orange-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Por Cobrar</span>}
+                            </div>
+                            <p className="text-xs text-slate-500 mt-0.5">Cobro programado: L {ps.servicios?.costo_hnl}</p>
+                            <p className={`text-xs font-medium mt-1 ${isDue ? 'text-orange-600' : 'text-brand-600'}`}>Siguiente cobro: {new Date(ps.fecha_proximo_cobro).toLocaleDateString('es-HN')}</p>
+                            
+                            {isDue && (
+                              <button 
+                                onClick={async () => {
+                                  if(!confirm('¿Generar nueva cuenta por cobrar para este servicio?')) return;
+                                  setSaving(true);
+                                  
+                                  // Generar Cuenta
+                                  await supabase.from('cuentas_por_cobrar').insert([{
+                                    paciente_id: pacienteId,
+                                    servicio_id: ps.servicio_id,
+                                    monto_total: ps.servicios?.costo_hnl,
+                                    subtotal: ps.servicios?.costo_hnl,
+                                    fecha_vencimiento: ps.fecha_proximo_cobro,
+                                    estado: 'al_dia',
+                                    monto_pagado: 0
+                                  }]);
+
+                                  // Actualizar próxima fecha (Asume mensual por defecto para el MVP)
+                                  const nextD = new Date(ps.fecha_proximo_cobro);
+                                  nextD.setMonth(nextD.getMonth() + 1);
+                                  await supabase.from('pacientes_servicios').update({
+                                    fecha_proximo_cobro: nextD.toISOString().split('T')[0]
+                                  }).eq('id', ps.id);
+
+                                  alert('Cuenta generada exitosamente. Se ha actualizado la próxima fecha de cobro.');
+                                  loadServiciosAsignados(pacienteId!);
+                                  setSaving(false);
+                                }}
+                                className="mt-3 text-xs bg-orange-600 hover:bg-orange-700 text-white px-3 py-1.5 rounded-lg transition-colors font-medium"
+                              >
+                                Emitir Cobro y Renovar
+                              </button>
+                            )}
+                          </div>
+                          <button 
+                            onClick={async () => {
+                              if(confirm('¿Eliminar este servicio del paciente?')) {
+                                await supabase.from('pacientes_servicios').delete().eq('id', ps.id);
+                                loadServiciosAsignados(pacienteId!);
+                              }
+                            }}
+                            className="text-slate-400 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition-colors self-start"
+                          >
+                            <Trash2 size={18}/>
+                          </button>
                         </div>
-                        <button className="text-slate-400 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition-colors">
-                          <Trash2 size={18}/>
-                        </button>
-                      </div>
-                    ))
+                      )
+                    })
                   )}
                 </div>
               </div>
