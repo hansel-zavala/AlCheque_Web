@@ -1,6 +1,29 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { X, User, Users, BriefcaseMedical, Loader2, Save, Plus, Trash2 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
+
+type ServicioCatalogo = { id: string; nombre: string; costo_hnl: number };
+
+type PacienteRow = {
+  id: string;
+  codigo_interno: string | null;
+  nombre_completo: string | null;
+  fecha_nacimiento: string | null;
+  genero: string | null;
+  grado_escolar: string | null;
+  nombre_tutor: string | null;
+  telefono_tutor: string | null;
+  email_tutor: string | null;
+  relacion_tutor: string | null;
+};
+
+type ServicioAsignadoRow = {
+  id: string;
+  servicio_id: string;
+  fecha_inicio: string;
+  fecha_proximo_cobro: string;
+  servicios: { nombre: string | null; costo_hnl: number | null } | null;
+};
 
 type PacienteDrawerProps = {
   isOpen: boolean;
@@ -10,7 +33,7 @@ type PacienteDrawerProps = {
 };
 
 export function PacienteDrawer({ isOpen, onClose, pacienteId, onSuccess }: PacienteDrawerProps) {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'perfil' | 'servicios'>('perfil');
@@ -29,38 +52,35 @@ export function PacienteDrawer({ isOpen, onClose, pacienteId, onSuccess }: Pacie
   const [relacionTutor, setRelacionTutor] = useState('Madre');
 
   // Servicios
-  const [serviciosCatalogo, setServiciosCatalogo] = useState<any[]>([]);
-  const [serviciosAsignados, setServiciosAsignados] = useState<any[]>([]);
+  const [serviciosCatalogo, setServiciosCatalogo] = useState<ServicioCatalogo[]>([]);
+  const [serviciosAsignados, setServiciosAsignados] = useState<ServicioAsignadoRow[]>([]);
   const [nuevoServicioId, setNuevoServicioId] = useState('');
   const [fechaInicioServicio, setFechaInicioServicio] = useState(new Date().toISOString().split('T')[0]);
 
-  useEffect(() => {
-    if (isOpen) {
-      if (pacienteId) {
-        loadPaciente(pacienteId);
-        loadServiciosAsignados(pacienteId);
-      } else {
-        resetForm();
-      }
-      loadCatalog();
-    }
-  }, [isOpen, pacienteId]);
-
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     setCodigoInterno(''); setNombreCompleto(''); setFechaNacimiento(''); setGenero('Masculino'); setGradoEscolar('');
     setNombreTutor(''); setTelefonoTutor(''); setEmailTutor(''); setRelacionTutor('Madre');
     setActiveTab('perfil');
     setServiciosAsignados([]);
-  };
+  }, []);
 
-  const loadCatalog = async () => {
-    const { data } = await supabase.from('servicios').select('*').eq('activo', true);
+  const loadCatalog = useCallback(async () => {
+    const { data } = await supabase
+      .from('servicios')
+      .select('id, nombre, costo_hnl')
+      .eq('activo', true)
+      .returns<ServicioCatalogo[]>();
     if (data) setServiciosCatalogo(data);
-  };
+  }, [supabase]);
 
-  const loadPaciente = async (id: string) => {
+  const loadPaciente = useCallback(async (id: string) => {
     setLoading(true);
-    const { data } = await supabase.from('pacientes').select('*').eq('id', id).single();
+    const { data } = await supabase
+      .from('pacientes')
+      .select('id, codigo_interno, nombre_completo, fecha_nacimiento, genero, grado_escolar, nombre_tutor, telefono_tutor, email_tutor, relacion_tutor')
+      .eq('id', id)
+      .single()
+      .returns<PacienteRow>();
     if (data) {
       setCodigoInterno(data.codigo_interno || '');
       setNombreCompleto(data.nombre_completo || '');
@@ -73,16 +93,29 @@ export function PacienteDrawer({ isOpen, onClose, pacienteId, onSuccess }: Pacie
       setRelacionTutor(data.relacion_tutor || 'Madre');
     }
     setLoading(false);
-  };
+  }, [supabase]);
 
-  const loadServiciosAsignados = async (id: string) => {
+  const loadServiciosAsignados = useCallback(async (id: string) => {
     const { data } = await supabase
       .from('pacientes_servicios')
       .select('*, servicios(nombre, costo_hnl)')
       .eq('paciente_id', id)
-      .eq('activo', true);
+      .eq('activo', true)
+      .returns<ServicioAsignadoRow[]>();
     if (data) setServiciosAsignados(data);
-  };
+  }, [supabase]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    if (pacienteId) {
+      loadPaciente(pacienteId);
+      loadServiciosAsignados(pacienteId);
+    } else {
+      resetForm();
+    }
+    loadCatalog();
+  }, [isOpen, pacienteId, loadPaciente, loadServiciosAsignados, loadCatalog, resetForm]);
 
   const handleSavePerfil = async (e: React.FormEvent) => {
     e.preventDefault();

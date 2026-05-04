@@ -1,21 +1,27 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { History, Search, ArrowLeft, Loader2, User } from 'lucide-react';
 import Link from 'next/link';
 
+type AuditLog = {
+  id: string;
+  fecha_hora: string;
+  tabla: string;
+  campo: string;
+  valor_anterior: string | null;
+  valor_nuevo: string | null;
+  users: { nombre: string | null } | null;
+};
+
 export default function AuditoriaPage() {
-  const supabase = createClient();
-  const [logs, setLogs] = useState<any[]>([]);
+  const supabase = useMemo(() => createClient(), []);
+  const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
-  useEffect(() => {
-    fetchLogs();
-  }, []);
-
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     setLoading(true);
     const { data } = await supabase
       .from('auditoria')
@@ -23,11 +29,16 @@ export default function AuditoriaPage() {
         *,
         users(nombre)
       `)
-      .order('fecha_hora', { ascending: false });
+      .order('fecha_hora', { ascending: false })
+      .returns<AuditLog[]>();
     
     if (data) setLogs(data);
     setLoading(false);
-  };
+  }, [supabase]);
+
+  useEffect(() => {
+    fetchLogs();
+  }, [fetchLogs]);
 
   const filteredLogs = logs.filter(log => 
     log.tabla.toLowerCase().includes(searchTerm.toLowerCase()) ||

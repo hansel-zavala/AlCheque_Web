@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react';
-import { X, Download, Loader2, FileSpreadsheet, FileText } from 'lucide-react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { X, Loader2, FileSpreadsheet, FileText } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
+
+type ReportRow = Record<string, unknown>;
 
 type ReportViewModalProps = {
   isOpen: boolean;
@@ -10,17 +12,11 @@ type ReportViewModalProps = {
 };
 
 export function ReportViewModal({ isOpen, onClose, reportType, title }: ReportViewModalProps) {
-  const supabase = createClient();
-  const [data, setData] = useState<any[]>([]);
+  const supabase = useMemo(() => createClient(), []);
+  const [data, setData] = useState<ReportRow[]>([]);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (isOpen) {
-      fetchReportData();
-    }
-  }, [isOpen, reportType]);
-
-  const fetchReportData = async () => {
+  const fetchReportData = useCallback(async () => {
     setLoading(true);
     if (reportType === 'flujo') {
       const { data: trans } = await supabase.from('transacciones').select('tipo, monto_hnl, fecha, descripcion, categorias(nombre)').eq('anulado', false).order('fecha', { ascending: false });
@@ -29,10 +25,23 @@ export function ReportViewModal({ isOpen, onClose, reportType, title }: ReportVi
       const { data: catData } = await supabase.from('transacciones').select('monto_hnl, tipo, categorias(nombre)').eq('anulado', false);
       if (catData) {
         const grouped: Record<string, number> = {};
-        catData.forEach(t => {
-          const cat: any = t.categorias;
-          const name = (Array.isArray(cat) ? cat[0]?.nombre : cat?.nombre) || 'Sin Categoría';
-          grouped[name] = (grouped[name] || 0) + parseFloat(t.monto_hnl as any);
+        const getCatName = (cat: unknown) => {
+          if (Array.isArray(cat)) {
+            const first = cat[0] as { nombre?: unknown } | undefined;
+            const n = first?.nombre;
+            return typeof n === 'string' && n.trim() ? n : 'Sin Categoría';
+          }
+          if (cat && typeof cat === 'object') {
+            const n = (cat as { nombre?: unknown }).nombre;
+            return typeof n === 'string' && n.trim() ? n : 'Sin Categoría';
+          }
+          return 'Sin Categoría';
+        };
+
+        catData.forEach((t) => {
+          const name = getCatName((t as { categorias?: unknown }).categorias);
+          const montoRaw = (t as { monto_hnl?: unknown }).monto_hnl;
+          grouped[name] = (grouped[name] || 0) + Number(montoRaw || 0);
         });
         setData(Object.entries(grouped).map(([name, total]) => ({ name, total })));
       }
@@ -41,13 +50,19 @@ export function ReportViewModal({ isOpen, onClose, reportType, title }: ReportVi
       if (deudas) setData(deudas);
     }
     setLoading(false);
-  };
+  }, [reportType, supabase]);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchReportData();
+    }
+  }, [isOpen, fetchReportData]);
 
   const exportToCSV = () => {
     if (data.length === 0) return;
-    const headers = Object.keys(data[0]).join(',');
+    const headers = Object.keys(data[0] ?? {}).join(',');
     const rows = data.map(row => 
-      Object.values(row).map(val => `"${val?.toString().replace(/"/g, '""') || ''}"`).join(',')
+      Object.values(row).map(val => `"${String(val ?? '').replace(/"/g, '""')}"`).join(',')
     ).join('\n');
     
     const csvContent = "data:text/csv;charset=utf-8," + headers + "\n" + rows;
@@ -114,7 +129,7 @@ export function ReportViewModal({ isOpen, onClose, reportType, title }: ReportVi
                 <tbody className="divide-y divide-slate-100">
                   {data.map((row, i) => (
                     <tr key={i} className="hover:bg-slate-50/50 transition-colors">
-                      {Object.values(row).map((val: any, j) => (
+                      {Object.values(row).map((val, j) => (
                         <td key={j} className="p-4 text-sm text-slate-600">
                           {typeof val === 'object' ? JSON.stringify(val) : val?.toString()}
                         </td>

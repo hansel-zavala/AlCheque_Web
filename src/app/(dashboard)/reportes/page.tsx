@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { FileBarChart2, Download, Table, History } from 'lucide-react';
+import { FileBarChart2, Table, History } from 'lucide-react';
 import Link from 'next/link';
 import { ReportViewModal } from '@/components/ReportViewModal';
 

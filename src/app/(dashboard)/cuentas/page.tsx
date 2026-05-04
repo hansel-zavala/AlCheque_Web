@@ -1,27 +1,47 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Search, AlertCircle, CheckCircle, HandCoins, Plus, Loader2, CalendarClock, Receipt, Tag } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
-import { CuentaModal } from '@/components/CuentaModal';
-import { AbonoModal } from '@/components/AbonoModal';
+import dynamic from 'next/dynamic';
+
+const CuentaModal = dynamic(
+  () => import('@/components/CuentaModal').then((m) => m.CuentaModal),
+  { ssr: false }
+);
+
+const AbonoModal = dynamic(
+  () => import('@/components/AbonoModal').then((m) => m.AbonoModal),
+  { ssr: false }
+);
+
+type Cuenta = {
+  id: string;
+  monto_total: string;
+  monto_pagado: string;
+  fecha_vencimiento: string;
+  estado: string;
+  estadoCalculado?: string;
+  descuento_valor: number | null;
+  notas?: string | null;
+  pacientes: { nombre_completo: string | null; codigo_interno: string | null } | null;
+  servicios: { nombre: string | null } | null;
+};
+
+type CuentaRow = Omit<Cuenta, 'estadoCalculado'>;
 
 export default function CuentasPage() {
-  const supabase = createClient();
-  const [cuentas, setCuentas] = useState<any[]>([]);
+  const supabase = useMemo(() => createClient(), []);
+  const [cuentas, setCuentas] = useState<Cuenta[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'todas' | 'pendientes' | 'vencidas'>('todas');
   const [searchTerm, setSearchTerm] = useState('');
 
   const [isCuentaModalOpen, setIsCuentaModalOpen] = useState(false);
   const [isAbonoModalOpen, setIsAbonoModalOpen] = useState(false);
-  const [selectedCuenta, setSelectedCuenta] = useState<any>(null);
+  const [selectedCuenta, setSelectedCuenta] = useState<Cuenta | null>(null);
 
-  useEffect(() => {
-    fetchCuentas();
-  }, []);
-
-  const fetchCuentas = async () => {
+  const fetchCuentas = useCallback(async () => {
     setLoading(true);
     const { data } = await supabase
       .from('cuentas_por_cobrar')
@@ -30,7 +50,8 @@ export default function CuentasPage() {
         pacientes(nombre_completo, codigo_interno),
         servicios(nombre)
       `)
-      .order('fecha_vencimiento', { ascending: true });
+      .order('fecha_vencimiento', { ascending: true })
+      .returns<CuentaRow[]>();
 
     if (data) {
       // Determinar si están vencidas basado en la fecha
@@ -45,17 +66,22 @@ export default function CuentasPage() {
       setCuentas(procesadas);
     }
     setLoading(false);
-  };
+  }, [supabase]);
 
-  const handleOpenAbono = (cuenta: any) => {
+  useEffect(() => {
+    fetchCuentas();
+  }, [fetchCuentas]);
+
+  const handleOpenAbono = (cuenta: Cuenta) => {
     setSelectedCuenta(cuenta);
     setIsAbonoModalOpen(true);
   };
 
   const filteredCuentas = cuentas.filter(c => {
-    const matchesSearch = c.pacientes?.nombre_completo.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          c.pacientes?.codigo_interno.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          c.notas?.toLowerCase().includes(searchTerm.toLowerCase());
+    const needle = searchTerm.toLowerCase();
+    const matchesSearch = (c.pacientes?.nombre_completo ?? '').toLowerCase().includes(needle) || 
+                          (c.pacientes?.codigo_interno ?? '').toLowerCase().includes(needle) ||
+                          (c.notas ?? '').toLowerCase().includes(needle);
     
     if (filter === 'pendientes') return matchesSearch && c.estadoCalculado !== 'pagada';
     if (filter === 'vencidas') return matchesSearch && c.estadoCalculado === 'vencida';
@@ -139,7 +165,7 @@ export default function CuentasPage() {
                     </td>
                     <td className="p-4 text-right">
                       <p className="font-medium text-slate-800 font-mono">L {parseFloat(c.monto_total).toFixed(2)}</p>
-                      {c.descuento_valor > 0 && (
+                      {(c.descuento_valor ?? 0) > 0 && (
                         <p className="text-xs text-brand-600 flex items-center justify-end gap-1"><Tag size={10}/> Descuento aplicado</p>
                       )}
                     </td>

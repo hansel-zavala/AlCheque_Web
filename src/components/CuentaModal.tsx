@@ -1,6 +1,9 @@
-import { useState, useEffect } from 'react';
-import { X, Save, Loader2, DollarSign, Search, Calendar, Tag } from 'lucide-react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { X, Save, Loader2 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
+
+type PacienteOption = { id: string; nombre_completo: string; codigo_interno: string | null };
+type ServicioOption = { id: string; nombre: string; costo_hnl: number };
 
 type CuentaModalProps = {
   isOpen: boolean;
@@ -9,10 +12,10 @@ type CuentaModalProps = {
 };
 
 export function CuentaModal({ isOpen, onClose, onSuccess }: CuentaModalProps) {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const [loading, setLoading] = useState(false);
-  const [pacientes, setPacientes] = useState<any[]>([]);
-  const [servicios, setServicios] = useState<any[]>([]);
+  const [pacientes, setPacientes] = useState<PacienteOption[]>([]);
+  const [servicios, setServicios] = useState<ServicioOption[]>([]);
   
   // Form
   const [pacienteId, setPacienteId] = useState('');
@@ -24,19 +27,27 @@ export function CuentaModal({ isOpen, onClose, onSuccess }: CuentaModalProps) {
   const [descuentoValor, setDescuentoValor] = useState('0');
   const [notas, setNotas] = useState('');
 
+  const loadData = useCallback(async () => {
+    const { data: pData } = await supabase
+      .from('pacientes')
+      .select('id, nombre_completo, codigo_interno')
+      .eq('activo', true)
+      .returns<PacienteOption[]>();
+    if (pData) setPacientes(pData);
+
+    const { data: sData } = await supabase
+      .from('servicios')
+      .select('id, nombre, costo_hnl')
+      .eq('activo', true)
+      .returns<ServicioOption[]>();
+    if (sData) setServicios(sData);
+  }, [supabase]);
+
   useEffect(() => {
     if (isOpen) {
       loadData();
     }
-  }, [isOpen]);
-
-  const loadData = async () => {
-    const { data: pData } = await supabase.from('pacientes').select('id, nombre_completo, codigo_interno').eq('activo', true);
-    if (pData) setPacientes(pData);
-
-    const { data: sData } = await supabase.from('servicios').select('id, nombre, costo_hnl').eq('activo', true);
-    if (sData) setServicios(sData);
-  };
+  }, [isOpen, loadData]);
 
   const handleServicioChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const sid = e.target.value;

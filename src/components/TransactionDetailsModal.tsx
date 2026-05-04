@@ -1,6 +1,22 @@
 import { X, Calendar, FileText, Tag, CreditCard, CheckCircle2, Clock, Trash2, Edit2, Loader2, Ban } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
+
+type Transaccion = {
+  id: string;
+  tipo: 'ingreso' | 'egreso';
+  monto_hnl: number;
+  monto_usd: number | null;
+  fecha: string;
+  descripcion: string;
+  categoria_id: string;
+  anulado: boolean | null;
+  categorias: { nombre: string | null } | null;
+  metodo_pago: string;
+  numero_recibo: string | null;
+  comprobante_url: string | null;
+  estado: string;
+};
 
 export function TransactionDetailsModal({ 
   transaction, 
@@ -8,13 +24,13 @@ export function TransactionDetailsModal({
   onUpdate,
   onEdit
 }: { 
-  transaction: any; 
+  transaction: Transaccion; 
   onClose: () => void;
   onUpdate: () => void;
-  onEdit: (t: any) => void;
+  onEdit: (t: Transaccion) => void;
 }) {
   const [isAnulando, setIsAnulando] = useState(false);
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   if (!transaction) return null;
 
@@ -26,8 +42,8 @@ export function TransactionDetailsModal({
     
     setIsAnulando(true);
     
-    // Obtener usuario actual para la auditoría
-    const { data: { user } } = await supabase.auth.getUser();
+    // Trigger a session refresh if needed (and keeps auth consistent for RLS).
+    await supabase.auth.getUser();
 
     // 1. Guardar en auditoría
     const { error: auditError } = await supabase.from('auditoria').insert([{

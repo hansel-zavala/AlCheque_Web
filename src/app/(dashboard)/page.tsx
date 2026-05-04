@@ -1,19 +1,50 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { createClient } from '@/utils/supabase/client';
 import { Loader2, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
+type TransaccionRow = {
+  id: string;
+  tipo: 'ingreso' | 'egreso';
+  monto_hnl: number;
+  fecha: string;
+  descripcion: string;
+  anulado: boolean | null;
+  categorias: { nombre: string | null } | null;
+};
+
+type ChartBucket = {
+  name: string;
+  ingresos: number;
+  egresos: number;
+  sort: number;
+};
+
+type CuentaVencimientoRow = {
+  id: string;
+  monto_total: string;
+  monto_pagado: string;
+  fecha_vencimiento: string;
+  pacientes: { nombre_completo: string | null } | null;
+};
+
+type CuentaSaldoRow = {
+  monto_total: string;
+  monto_pagado: string;
+};
+
 export default function DashboardPage() {
-  const supabase = createClient();
+  // Avoid recreating the Supabase client on every render.
+  const supabase = useMemo(() => createClient(), []);
   const [ingresosMes, setIngresosMes] = useState(0);
   const [egresosMes, setEgresosMes] = useState(0);
   const [saldoNeto, setSaldoNeto] = useState(0);
-  const [recentTrans, setRecentTrans] = useState<any[]>([]);
-  const [chartData, setChartData] = useState<any[]>([]);
-  const [vencimientos, setVencimientos] = useState<any[]>([]);
+  const [recentTrans, setRecentTrans] = useState<TransaccionRow[]>([]);
+  const [chartData, setChartData] = useState<ChartBucket[]>([]);
+  const [vencimientos, setVencimientos] = useState<CuentaVencimientoRow[]>([]);
   const [totalPorCobrar, setTotalPorCobrar] = useState(0);
   const [loading, setLoading] = useState(true);
 
@@ -27,21 +58,46 @@ export default function DashboardPage() {
       // First day of 5 months ago (so we get 6 months total including current)
       const firstDaySixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1).toISOString();
 
-      const { data, error } = await supabase
+      // Fetch in parallel to avoid request waterfalls.
+      const nextWeek = new Date();
+      nextWeek.setDate(nextWeek.getDate() + 7);
+      const nextWeekStr = nextWeek.toISOString().split('T')[0];
+
+      const transaccionesPromise = supabase
         .from('transacciones')
         .select('id, tipo, monto_hnl, fecha, descripcion, anulado, categorias(nombre)')
         .gte('fecha', firstDaySixMonthsAgo)
-        .order('fecha', { ascending: false });
+        .order('fecha', { ascending: false })
+        .returns<TransaccionRow[]>();
 
-      if (error) {
-        console.error(error);
-        setLoading(false);
-        return;
+      const vencimientosPromise = supabase
+        .from('cuentas_por_cobrar')
+        .select('id, monto_total, monto_pagado, fecha_vencimiento, pacientes(nombre_completo)')
+        .eq('estado', 'al_dia') // Only fetch those not paid yet, our UI sets 'pagada'
+        .lte('fecha_vencimiento', nextWeekStr)
+        .order('fecha_vencimiento', { ascending: true })
+        .limit(5)
+        .returns<CuentaVencimientoRow[]>();
+
+      const totalPorCobrarPromise = supabase
+        .from('cuentas_por_cobrar')
+        .select('monto_total, monto_pagado')
+        .neq('estado', 'pagada')
+        .returns<CuentaSaldoRow[]>();
+
+      const [
+        { data: transacciones, error: transError },
+        { data: cuentasData, error: cuentasError },
+        { data: allCuentas, error: totalError },
+      ] = await Promise.all([transaccionesPromise, vencimientosPromise, totalPorCobrarPromise]);
+
+      if (transError) {
+        console.error(transError);
       }
 
-      if (data) {
+      if (transacciones) {
         // EXCLUIR transacciones anuladas de todos los cálculos y vistas del Dashboard
-        const validData = data.filter(t => !t.anulado);
+        const validData = transacciones.filter(t => !t.anulado);
 
         let ingresos = 0;
         let egresos = 0;
@@ -63,8 +119,8 @@ export default function DashboardPage() {
 
         // Group data for the last 6 months for the chart
         const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-        const chartAgg: Record<string, any> = {};
-        
+        const chartAgg: Record<string, ChartBucket> = {};
+
         // Initialize buckets
         for (let i = 5; i >= 0; i--) {
           const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
@@ -79,42 +135,31 @@ export default function DashboardPage() {
 
         // Fill buckets
         validData.forEach(t => {
-          // Adjust timezone offsets if necessary, but string parsing is usually fine here
           // Supabase returns 'YYYY-MM-DD' for date columns
           const [year, month, day] = t.fecha.split('-');
           const tDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
           const key = `${tDate.getFullYear()}-${tDate.getMonth()}`;
-          
+
           if (chartAgg[key]) {
             if (t.tipo === 'ingreso') chartAgg[key].ingresos += t.monto_hnl;
             if (t.tipo === 'egreso') chartAgg[key].egresos += t.monto_hnl;
           }
         });
 
-        const finalChartData = Object.values(chartAgg).sort((a: any, b: any) => a.sort - b.sort);
+        const finalChartData = Object.values(chartAgg).sort((a, b) => a.sort - b.sort);
         setChartData(finalChartData);
       }
-      
-      // Fetch Vencimientos
-      const todayStr = new Date().toISOString().split('T')[0];
-      const nextWeek = new Date();
-      nextWeek.setDate(nextWeek.getDate() + 7);
-      const nextWeekStr = nextWeek.toISOString().split('T')[0];
 
-      const { data: cuentasData } = await supabase
-        .from('cuentas_por_cobrar')
-        .select('id, monto_total, monto_pagado, fecha_vencimiento, pacientes(nombre_completo)')
-        .eq('estado', 'al_dia') // Only fetch those not paid yet, our UI sets 'pagada'
-        .lte('fecha_vencimiento', nextWeekStr)
-        .order('fecha_vencimiento', { ascending: true })
-        .limit(5);
-
+      if (cuentasError) {
+        console.error(cuentasError);
+      }
       if (cuentasData) {
         setVencimientos(cuentasData);
       }
 
-      // Fetch Total por Cobrar
-      const { data: allCuentas } = await supabase.from('cuentas_por_cobrar').select('monto_total, monto_pagado').neq('estado', 'pagada');
+      if (totalError) {
+        console.error(totalError);
+      }
       if (allCuentas) {
         const total = allCuentas.reduce((acc, c) => acc + (parseFloat(c.monto_total) - parseFloat(c.monto_pagado)), 0);
         setTotalPorCobrar(total);
@@ -175,11 +220,11 @@ export default function DashboardPage() {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748B'}} dy={10} />
                 <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748B'}} tickFormatter={(val) => `L ${val / 1000}k`} />
-                <Tooltip 
-                  cursor={{fill: '#F1F5F9'}} 
-                  contentStyle={{borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'}}
-                  formatter={(value: any) => [formatMoney(value as number), '']} 
-                />
+                  <Tooltip 
+                    cursor={{fill: '#F1F5F9'}} 
+                    contentStyle={{borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'}}
+                    formatter={(value: unknown) => [formatMoney(Number(value)), '']} 
+                  />
                 <Bar dataKey="ingresos" fill="#10B981" radius={[4, 4, 0, 0]} name="Ingresos" maxBarSize={50} />
                 <Bar dataKey="egresos" fill="#EF4444" radius={[4, 4, 0, 0]} name="Egresos" maxBarSize={50} />
               </BarChart>
@@ -242,7 +287,12 @@ export default function DashboardPage() {
                 const isVencida = v.fecha_vencimiento < new Date().toISOString().split('T')[0];
                 return (
                   <div key={v.id} className={`p-4 rounded-xl border ${isVencida ? 'bg-red-50 border-red-200' : 'bg-orange-50 border-orange-200'}`}>
-                    <p className="font-semibold text-slate-800 truncate" title={v.pacientes?.nombre_completo}>{v.pacientes?.nombre_completo}</p>
+                    <p
+                      className="font-semibold text-slate-800 truncate"
+                      title={v.pacientes?.nombre_completo ?? undefined}
+                    >
+                      {v.pacientes?.nombre_completo ?? 'Sin nombre'}
+                    </p>
                     <p className={`text-xs font-medium mt-1 ${isVencida ? 'text-red-600' : 'text-orange-600'}`}>
                       {isVencida ? 'Vencida el' : 'Vence el'} {new Date(v.fecha_vencimiento).toLocaleDateString('es-HN')}
                     </p>

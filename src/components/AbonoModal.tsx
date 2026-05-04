@@ -1,16 +1,25 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { X, HandCoins, Loader2 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
+
+type CuentaForAbono = {
+  id: string;
+  monto_total: string;
+  monto_pagado: string;
+  estado: string;
+  pacientes: { nombre_completo: string | null } | null;
+  servicios: { nombre: string | null } | null;
+};
 
 type AbonoModalProps = {
   isOpen: boolean;
   onClose: () => void;
-  cuenta: any;
+  cuenta: CuentaForAbono | null;
   onSuccess: () => void;
 };
 
 export function AbonoModal({ isOpen, onClose, cuenta, onSuccess }: AbonoModalProps) {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const [loading, setLoading] = useState(false);
   
   const [monto, setMonto] = useState('');
@@ -61,8 +70,14 @@ export function AbonoModal({ isOpen, onClose, cuenta, onSuccess }: AbonoModalPro
 
     // 3. Crear Transacción de Ingreso automática para que afecte el Dashboard y Flujo de Caja
     // Buscamos la categoría "Cobro de Servicios"
-    let { data: catData } = await supabase.from('categorias').select('id').eq('nombre', 'Cobro de Servicios').eq('tipo', 'ingreso').maybeSingle();
-    let catId = catData?.id;
+    const { data: catData } = await supabase
+      .from('categorias')
+      .select('id')
+      .eq('nombre', 'Cobro de Servicios')
+      .eq('tipo', 'ingreso')
+      .limit(1)
+      .returns<{ id: string }[]>();
+    let catId = catData?.[0]?.id;
 
     if (!catId) {
       // Si no existe, la creamos al vuelo

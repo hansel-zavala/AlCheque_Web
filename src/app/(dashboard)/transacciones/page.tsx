@@ -1,25 +1,46 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { PlusCircle, MinusCircle, FileDown, Search, Loader2 } from 'lucide-react';
-import { TransactionForm } from '@/components/TransactionForm';
-import { TransactionDetailsModal } from '@/components/TransactionDetailsModal';
+import dynamic from 'next/dynamic';
 import { createClient } from '@/utils/supabase/client';
+
+const TransactionForm = dynamic(
+  () => import('@/components/TransactionForm').then((m) => m.TransactionForm),
+  { ssr: false }
+);
+
+const TransactionDetailsModal = dynamic(
+  () => import('@/components/TransactionDetailsModal').then((m) => m.TransactionDetailsModal),
+  { ssr: false }
+);
+
+type Transaccion = {
+  id: string;
+  tipo: 'ingreso' | 'egreso';
+  fecha: string;
+  descripcion: string;
+  metodo_pago: string;
+  estado: string;
+  categoria_id: string;
+  anulado: boolean | null;
+  numero_recibo: string | null;
+  monto_hnl: number;
+  monto_usd: number | null;
+  comprobante_url: string | null;
+  categorias: { nombre: string | null } | null;
+};
 
 export default function TransaccionesPage() {
   const [modalType, setModalType] = useState<'ingreso' | 'egreso' | null>(null);
-  const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
-  const [editingTransaction, setEditingTransaction] = useState<any>(null);
-  const [transacciones, setTransacciones] = useState<any[]>([]);
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaccion | null>(null);
+  const [editingTransaction, setEditingTransaction] = useState<Transaccion | null>(null);
+  const [transacciones, setTransacciones] = useState<Transaccion[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'todos' | 'ingresos' | 'egresos' | 'anulados'>('todos');
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
-  useEffect(() => {
-    fetchTransacciones();
-  }, []);
-
-  const fetchTransacciones = async () => {
+  const fetchTransacciones = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('transacciones')
@@ -37,7 +58,11 @@ export default function TransaccionesPage() {
       setTransacciones(data);
     }
     setLoading(false);
-  };
+  }, [supabase]);
+
+  useEffect(() => {
+    fetchTransacciones();
+  }, [fetchTransacciones]);
 
   const handleTransactionSaved = () => {
     setModalType(null);

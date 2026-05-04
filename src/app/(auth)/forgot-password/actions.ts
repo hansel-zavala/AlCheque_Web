@@ -1,13 +1,14 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
-import { redirect } from 'next/navigation'
 
-export async function resetPassword(prevState: any, formData: FormData) {
+type ResetPasswordState = { error: string; success: string };
+
+export async function resetPassword(_prevState: ResetPasswordState, formData: FormData): Promise<ResetPasswordState> {
   const email = formData.get('email') as string
 
   if (!email) {
-    return { error: 'Por favor, ingresa tu correo electrónico.' }
+    return { error: 'Por favor, ingresa tu correo electrónico.', success: '' }
   }
 
   const supabase = createClient()
@@ -20,8 +21,8 @@ export async function resetPassword(prevState: any, formData: FormData) {
   if (error) {
     // Es buena práctica no revelar si el correo existe o no por seguridad, 
     // pero para uso interno puedes mostrar error.
-    return { error: 'Hubo un error al enviar el correo. Verifica tu dirección.' }
+    return { error: 'Hubo un error al enviar el correo. Verifica tu dirección.', success: '' }
   }
 
-  return { success: 'Se ha enviado un enlace de recuperación a tu correo electrónico.' }
+  return { error: '', success: 'Se ha enviado un enlace de recuperación a tu correo electrónico.' }
 }

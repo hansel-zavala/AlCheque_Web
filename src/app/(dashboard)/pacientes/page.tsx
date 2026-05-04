@@ -1,9 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Search, UserPlus, FileText, Loader2, Users } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
-import { PacienteDrawer } from '@/components/PacienteDrawer';
+import dynamic from 'next/dynamic';
+
+const PacienteDrawer = dynamic(
+  () => import('@/components/PacienteDrawer').then((m) => m.PacienteDrawer),
+  { ssr: false }
+);
 
 type Paciente = {
   id: string;
@@ -14,7 +19,7 @@ type Paciente = {
 };
 
 export default function PacientesPage() {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -22,20 +27,20 @@ export default function PacientesPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedPacienteId, setSelectedPacienteId] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchPacientes();
-  }, []);
-
-  const fetchPacientes = async () => {
+  const fetchPacientes = useCallback(async () => {
     setLoading(true);
     const { data } = await supabase
       .from('pacientes')
       .select('*')
       .order('nombre_completo', { ascending: true });
-      
+       
     if (data) setPacientes(data);
     setLoading(false);
-  };
+  }, [supabase]);
+
+  useEffect(() => {
+    fetchPacientes();
+  }, [fetchPacientes]);
 
   const handleOpenDrawer = (id: string | null = null) => {
     setSelectedPacienteId(id);

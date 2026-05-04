@@ -1,22 +1,36 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { X, UploadCloud, Loader2 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
+
+type Categoria = { id: string; nombre: string };
+
+type TransaccionEditable = {
+  id: string;
+  monto_hnl: number;
+  monto_usd: number | null;
+  fecha: string;
+  categoria_id: string;
+  metodo_pago: string;
+  descripcion: string;
+  numero_recibo: string | null;
+  comprobante_url: string | null;
+};
 
 interface TransactionFormProps {
   type: 'ingreso' | 'egreso';
   onClose: () => void;
   onSuccess: () => void;
-  initialData?: any;
+  initialData?: TransaccionEditable | null;
 }
 
 export function TransactionForm({ type, onClose, onSuccess, initialData }: TransactionFormProps) {
   const isIngreso = type === 'ingreso';
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   
   // States
-  const [categorias, setCategorias] = useState<any[]>([]);
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetchingCats, setFetchingCats] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
@@ -35,9 +49,10 @@ export function TransactionForm({ type, onClose, onSuccess, initialData }: Trans
     async function loadCategories() {
       const { data, error } = await supabase
         .from('categorias')
-        .select('*')
+        .select('id, nombre')
         .eq('tipo', type)
-        .eq('activa', true);
+        .eq('activa', true)
+        .returns<Categoria[]>();
       
       if (error) {
         setErrorMsg('Error DB: ' + error.message);
