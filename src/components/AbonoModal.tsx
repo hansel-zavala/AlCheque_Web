@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { X, HandCoins, Loader2 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
+import { formatLocalDateInputValue } from '@/utils/date';
 
 type CuentaForAbono = {
   id: string;
@@ -23,7 +24,7 @@ export function AbonoModal({ isOpen, onClose, cuenta, onSuccess }: AbonoModalPro
   const [loading, setLoading] = useState(false);
   
   const [monto, setMonto] = useState('');
-  const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
+  const [fecha, setFecha] = useState(formatLocalDateInputValue());
   const [metodo, setMetodo] = useState('efectivo');
   const [comprobante, setComprobante] = useState('');
 

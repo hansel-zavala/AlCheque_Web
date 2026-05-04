@@ -5,6 +5,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { createClient } from '@/utils/supabase/client';
 import { Loader2, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import { formatLocalDateInputValue, parseDateOnly } from '@/utils/date';
 
 type TransaccionRow = {
   id: string;
@@ -61,7 +62,7 @@ export default function DashboardPage() {
       // Fetch in parallel to avoid request waterfalls.
       const nextWeek = new Date();
       nextWeek.setDate(nextWeek.getDate() + 7);
-      const nextWeekStr = nextWeek.toISOString().split('T')[0];
+      const nextWeekStr = formatLocalDateInputValue(nextWeek);
 
       const transaccionesPromise = supabase
         .from('transacciones')
@@ -244,7 +245,7 @@ export default function DashboardPage() {
                 <div className="overflow-hidden pr-3">
                   <p className="text-sm font-medium text-slate-800 truncate" title={t.descripcion}>{t.descripcion}</p>
                   <p className="text-xs text-slate-500 mt-0.5 truncate">
-                    {new Date(t.fecha).toLocaleDateString('es-HN', { month: 'short', day: 'numeric' })} • {t.categorias?.nombre || 'Sin categoría'}
+                    {parseDateOnly(t.fecha).toLocaleDateString('es-HN', { month: 'short', day: 'numeric' })} • {t.categorias?.nombre || 'Sin categoría'}
                   </p>
                 </div>
                 <p className={`text-sm font-bold whitespace-nowrap ${t.tipo === 'ingreso' ? 'text-green-600' : 'text-red-600'}`}>
@@ -284,7 +285,7 @@ export default function DashboardPage() {
             ) : (
               vencimientos.map(v => {
                 const saldo = parseFloat(v.monto_total) - parseFloat(v.monto_pagado);
-                const isVencida = v.fecha_vencimiento < new Date().toISOString().split('T')[0];
+                const isVencida = v.fecha_vencimiento < formatLocalDateInputValue();
                 return (
                   <div key={v.id} className={`p-4 rounded-xl border ${isVencida ? 'bg-red-50 border-red-200' : 'bg-orange-50 border-orange-200'}`}>
                     <p
@@ -294,7 +295,7 @@ export default function DashboardPage() {
                       {v.pacientes?.nombre_completo ?? 'Sin nombre'}
                     </p>
                     <p className={`text-xs font-medium mt-1 ${isVencida ? 'text-red-600' : 'text-orange-600'}`}>
-                      {isVencida ? 'Vencida el' : 'Vence el'} {new Date(v.fecha_vencimiento).toLocaleDateString('es-HN')}
+                      {isVencida ? 'Vencida el' : 'Vence el'} {parseDateOnly(v.fecha_vencimiento).toLocaleDateString('es-HN')}
                     </p>
                     <p className="font-mono font-bold mt-2 text-slate-800">L {saldo.toFixed(2)}</p>
                     <Link href="/cuentas" className="text-xs font-medium text-brand-600 mt-3 inline-block hover:underline">Gestionar Cobro &rarr;</Link>

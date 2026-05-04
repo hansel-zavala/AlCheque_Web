@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { PlusCircle, MinusCircle, FileDown, Search, Loader2 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { createClient } from '@/utils/supabase/client';
+import { parseDateOnly } from '@/utils/date';
 
 const TransactionForm = dynamic(
   () => import('@/components/TransactionForm').then((m) => m.TransactionForm),
@@ -179,7 +180,7 @@ export default function TransaccionesPage() {
                   className={`transition-colors group cursor-pointer ${t.anulado ? 'bg-slate-50 opacity-70 hover:opacity-100' : 'hover:bg-slate-50'}`}
                 >
                   <td className="p-4 text-sm text-slate-600">
-                    {new Date(t.fecha).toLocaleDateString('es-HN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    {parseDateOnly(t.fecha).toLocaleDateString('es-HN', { day: '2-digit', month: 'short', year: 'numeric' })}
                   </td>
                   <td className="p-4 font-medium text-slate-800">
                     {t.descripcion}

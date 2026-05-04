@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { X, User, Users, BriefcaseMedical, Loader2, Save, Plus, Trash2 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
+import { formatLocalDateInputValue, parseDateOnly } from '@/utils/date';
 
 type ServicioCatalogo = { id: string; nombre: string; costo_hnl: number };
 
@@ -55,7 +56,7 @@ export function PacienteDrawer({ isOpen, onClose, pacienteId, onSuccess }: Pacie
   const [serviciosCatalogo, setServiciosCatalogo] = useState<ServicioCatalogo[]>([]);
   const [serviciosAsignados, setServiciosAsignados] = useState<ServicioAsignadoRow[]>([]);
   const [nuevoServicioId, setNuevoServicioId] = useState('');
-  const [fechaInicioServicio, setFechaInicioServicio] = useState(new Date().toISOString().split('T')[0]);
+  const [fechaInicioServicio, setFechaInicioServicio] = useState(formatLocalDateInputValue());
 
   const resetForm = useCallback(() => {
     setCodigoInterno(''); setNombreCompleto(''); setFechaNacimiento(''); setGenero('Masculino'); setGradoEscolar('');
@@ -167,7 +168,7 @@ export function PacienteDrawer({ isOpen, onClose, pacienteId, onSuccess }: Pacie
       paciente_id: pacienteId,
       servicio_id: nuevoServicioId,
       fecha_inicio: fechaInicioServicio,
-      fecha_proximo_cobro: nextDate.toISOString().split('T')[0],
+      fecha_proximo_cobro: formatLocalDateInputValue(nextDate),
       activo: true
     }]);
 
@@ -322,7 +323,7 @@ export function PacienteDrawer({ isOpen, onClose, pacienteId, onSuccess }: Pacie
                               {isDue && <span className="bg-orange-100 text-orange-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Por Cobrar</span>}
                             </div>
                             <p className="text-xs text-slate-500 mt-0.5">Cobro programado: L {ps.servicios?.costo_hnl}</p>
-                            <p className={`text-xs font-medium mt-1 ${isDue ? 'text-orange-600' : 'text-brand-600'}`}>Siguiente cobro: {new Date(ps.fecha_proximo_cobro).toLocaleDateString('es-HN')}</p>
+                            <p className={`text-xs font-medium mt-1 ${isDue ? 'text-orange-600' : 'text-brand-600'}`}>Siguiente cobro: {parseDateOnly(ps.fecha_proximo_cobro).toLocaleDateString('es-HN')}</p>
                             
                             {isDue && (
                               <button 
@@ -342,10 +343,10 @@ export function PacienteDrawer({ isOpen, onClose, pacienteId, onSuccess }: Pacie
                                   }]);
 
                                   // Actualizar próxima fecha (Asume mensual por defecto para el MVP)
-                                  const nextD = new Date(ps.fecha_proximo_cobro);
+                                  const nextD = parseDateOnly(ps.fecha_proximo_cobro);
                                   nextD.setMonth(nextD.getMonth() + 1);
                                   await supabase.from('pacientes_servicios').update({
-                                    fecha_proximo_cobro: nextD.toISOString().split('T')[0]
+                                    fecha_proximo_cobro: formatLocalDateInputValue(nextD)
                                   }).eq('id', ps.id);
 
                                   alert('Cuenta generada exitosamente. Se ha actualizado la próxima fecha de cobro.');

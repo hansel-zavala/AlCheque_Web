@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { X, UploadCloud, Loader2 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
+import { formatLocalDateInputValue } from '@/utils/date';
 
 type Categoria = { id: string; nombre: string };
 
@@ -38,7 +39,7 @@ export function TransactionForm({ type, onClose, onSuccess, initialData }: Trans
   // Form values
   const [monto, setMonto] = useState(initialData ? (initialData.monto_usd ? initialData.monto_usd.toString() : initialData.monto_hnl.toString()) : '');
   const [enUsd, setEnUsd] = useState(initialData ? !!initialData.monto_usd : false);
-  const [fecha, setFecha] = useState(initialData ? initialData.fecha : new Date().toISOString().split('T')[0]);
+  const [fecha, setFecha] = useState(initialData ? initialData.fecha : formatLocalDateInputValue());
   const [categoriaId, setCategoriaId] = useState(initialData ? initialData.categoria_id : '');
   const [metodoPago, setMetodoPago] = useState(initialData ? initialData.metodo_pago : 'efectivo');
   const [descripcion, setDescripcion] = useState(initialData ? initialData.descripcion : '');

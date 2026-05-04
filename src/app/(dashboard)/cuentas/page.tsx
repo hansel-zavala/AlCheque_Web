@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Search, AlertCircle, CheckCircle, HandCoins, Plus, Loader2, CalendarClock, Receipt, Tag } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import dynamic from 'next/dynamic';
+import { formatLocalDateInputValue, parseDateOnly } from '@/utils/date';
 
 const CuentaModal = dynamic(
   () => import('@/components/CuentaModal').then((m) => m.CuentaModal),
@@ -55,7 +56,7 @@ export default function CuentasPage() {
 
     if (data) {
       // Determinar si están vencidas basado en la fecha
-      const today = new Date().toISOString().split('T')[0];
+      const today = formatLocalDateInputValue();
       const procesadas = data.map(c => {
         let estadoCalculado = c.estado;
         if (c.estado !== 'pagada' && c.fecha_vencimiento < today) {
@@ -160,7 +161,7 @@ export default function CuentasPage() {
                     <td className="p-4">
                       <p className="text-sm text-slate-700 font-medium">{c.notas || c.servicios?.nombre || 'Cobro Manual'}</p>
                       <p className="text-xs text-slate-500 flex items-center gap-1 mt-1">
-                        <CalendarClock size={12}/> Vence: {new Date(c.fecha_vencimiento).toLocaleDateString()}
+                        <CalendarClock size={12}/> Vence: {parseDateOnly(c.fecha_vencimiento).toLocaleDateString()}
                       </p>
                     </td>
                     <td className="p-4 text-right">

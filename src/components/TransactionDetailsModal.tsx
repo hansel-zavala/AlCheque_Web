@@ -1,6 +1,7 @@
 import { X, Calendar, FileText, Tag, CreditCard, CheckCircle2, Clock, Trash2, Edit2, Loader2, Ban } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
+import { parseDateOnly } from '@/utils/date';
 
 type Transaccion = {
   id: string;
@@ -104,7 +105,7 @@ export function TransactionDetailsModal({
             </h3>
             <p className="text-sm text-slate-500 mt-1 flex items-center gap-1 capitalize">
               <Calendar size={14} />
-              {new Date(transaction.fecha).toLocaleDateString('es-HN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              {parseDateOnly(transaction.fecha).toLocaleDateString('es-HN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </p>
           </div>
 
