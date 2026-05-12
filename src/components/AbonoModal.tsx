@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { X, HandCoins, Loader2 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { formatLocalDateInputValue } from '@/utils/date';
+import { useCompanyStore } from '@/store/useCompanyStore';
 
 type CuentaForAbono = {
   id: string;
@@ -22,6 +23,7 @@ type AbonoModalProps = {
 export function AbonoModal({ isOpen, onClose, cuenta, onSuccess }: AbonoModalProps) {
   const supabase = useMemo(() => createClient(), []);
   const [loading, setLoading] = useState(false);
+  const { activeCompany } = useCompanyStore();
   
   const [monto, setMonto] = useState('');
   const [fecha, setFecha] = useState(formatLocalDateInputValue());
@@ -45,7 +47,8 @@ export function AbonoModal({ isOpen, onClose, cuenta, onSuccess }: AbonoModalPro
       monto: abonoMonto,
       fecha: fecha,
       metodo_pago: metodo,
-      comprobante_referencia: comprobante
+      comprobante_referencia: comprobante,
+      company_id: activeCompany?.id
     }]);
 
     if (abonoError) {
@@ -76,13 +79,14 @@ export function AbonoModal({ isOpen, onClose, cuenta, onSuccess }: AbonoModalPro
       .select('id')
       .eq('nombre', 'Cobro de Servicios')
       .eq('tipo', 'ingreso')
+      .eq('company_id', activeCompany?.id)
       .limit(1)
       .returns<{ id: string }[]>();
     let catId = catData?.[0]?.id;
 
     if (!catId) {
       // Si no existe, la creamos al vuelo
-      const { data: newCat } = await supabase.from('categorias').insert([{ nombre: 'Cobro de Servicios', tipo: 'ingreso' }]).select().single();
+      const { data: newCat } = await supabase.from('categorias').insert([{ nombre: 'Cobro de Servicios', tipo: 'ingreso', company_id: activeCompany?.id }]).select().single();
       catId = newCat?.id;
     }
 
@@ -93,7 +97,8 @@ export function AbonoModal({ isOpen, onClose, cuenta, onSuccess }: AbonoModalPro
       descripcion: `Cobro: ${cuenta.pacientes?.nombre_completo} - ${cuenta.servicios?.nombre || 'General'}`,
       categoria_id: catId,
       metodo_pago: metodo,
-      estado: 'pagado'
+      estado: 'pagado',
+      company_id: activeCompany?.id
     }]);
 
     setLoading(false);

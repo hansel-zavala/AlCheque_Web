@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { X, Save, Loader2 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
+import { useCompanyStore } from '@/store/useCompanyStore';
 
 type PacienteOption = { id: string; nombre_completo: string; codigo_interno: string | null };
 type ServicioOption = { id: string; nombre: string; costo_hnl: number };
@@ -16,6 +17,7 @@ export function CuentaModal({ isOpen, onClose, onSuccess }: CuentaModalProps) {
   const [loading, setLoading] = useState(false);
   const [pacientes, setPacientes] = useState<PacienteOption[]>([]);
   const [servicios, setServicios] = useState<ServicioOption[]>([]);
+  const { activeCompany } = useCompanyStore();
   
   // Form
   const [pacienteId, setPacienteId] = useState('');
@@ -28,9 +30,11 @@ export function CuentaModal({ isOpen, onClose, onSuccess }: CuentaModalProps) {
   const [notas, setNotas] = useState('');
 
   const loadData = useCallback(async () => {
+    if (!activeCompany) return;
     const { data: pData } = await supabase
       .from('pacientes')
       .select('id, nombre_completo, codigo_interno')
+      .eq('company_id', activeCompany.id)
       .eq('activo', true)
       .returns<PacienteOption[]>();
     if (pData) setPacientes(pData);
@@ -38,10 +42,11 @@ export function CuentaModal({ isOpen, onClose, onSuccess }: CuentaModalProps) {
     const { data: sData } = await supabase
       .from('servicios')
       .select('id, nombre, costo_hnl')
+      .eq('company_id', activeCompany.id)
       .eq('activo', true)
       .returns<ServicioOption[]>();
     if (sData) setServicios(sData);
-  }, [supabase]);
+  }, [supabase, activeCompany]);
 
   useEffect(() => {
     if (isOpen) {
@@ -85,7 +90,8 @@ export function CuentaModal({ isOpen, onClose, onSuccess }: CuentaModalProps) {
       fecha_vencimiento: fechaVencimiento,
       estado: 'al_dia', // o 'por_vencer' dependiendo la fecha, pero iniciamos como al_dia
       notas,
-      monto_pagado: 0
+      monto_pagado: 0,
+      company_id: activeCompany?.id
     };
 
     const { error } = await supabase.from('cuentas_por_cobrar').insert([payload]);

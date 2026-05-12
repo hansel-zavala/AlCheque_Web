@@ -5,6 +5,7 @@ import { PlusCircle, MinusCircle, FileDown, Search, Loader2 } from 'lucide-react
 import dynamic from 'next/dynamic';
 import { createClient } from '@/utils/supabase/client';
 import { parseDateOnly } from '@/utils/date';
+import { useCompanyStore } from '@/store/useCompanyStore';
 
 const TransactionForm = dynamic(
   () => import('@/components/TransactionForm').then((m) => m.TransactionForm),
@@ -40,8 +41,11 @@ export default function TransaccionesPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'todos' | 'ingresos' | 'egresos' | 'anulados'>('todos');
   const supabase = useMemo(() => createClient(), []);
+  const { activeCompany } = useCompanyStore();
 
   const fetchTransacciones = useCallback(async () => {
+    if (!activeCompany) return;
+    
     setLoading(true);
     const { data, error } = await supabase
       .from('transacciones')
@@ -51,6 +55,7 @@ export default function TransaccionesPage() {
           nombre
         )
       `)
+      .eq('company_id', activeCompany.id)
       .order('fecha', { ascending: false });
     
     if (error) {
@@ -59,7 +64,7 @@ export default function TransaccionesPage() {
       setTransacciones(data);
     }
     setLoading(false);
-  }, [supabase]);
+  }, [supabase, activeCompany]);
 
   useEffect(() => {
     fetchTransacciones();

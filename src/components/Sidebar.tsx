@@ -9,9 +9,12 @@ import {
   PieChart, 
   Settings, 
   CreditCard,
-  LogOut
+  LogOut,
+  Building2,
+  ChevronsUpDown
 } from 'lucide-react';
 import { logout } from '@/app/(auth)/login/actions';
+import { useCompanyStore } from '@/store/useCompanyStore';
 
 const navItems = [
   { name: 'Resumen Diario', href: '/', icon: LayoutDashboard },
@@ -24,13 +27,30 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { activeCompany } = useCompanyStore();
 
   return (
     <aside className="w-64 bg-[#f5f5f7]/80 backdrop-blur-xl border-r border-[#d2d2d7]/50 hidden md:flex flex-col h-full z-20">
-      <div className="h-16 flex items-center px-6">
-        <h1 className="text-xl font-semibold tracking-tight text-[#1d1d1f]">
-          AlCheque
-        </h1>
+      <div className="p-4 border-b border-[#d2d2d7]/50">
+        <Link 
+          href="/select-company"
+          className="flex items-center justify-between p-2 rounded-xl hover:bg-white transition-colors group cursor-pointer border border-transparent hover:border-[#d2d2d7]/40 hover:shadow-sm"
+        >
+          <div className="flex items-center gap-3 overflow-hidden">
+            <div className="w-8 h-8 rounded-lg bg-brand-500 text-white flex items-center justify-center shrink-0 shadow-sm">
+              <Building2 size={16} />
+            </div>
+            <div className="flex flex-col truncate">
+              <span className="text-sm font-semibold text-[#1d1d1f] truncate">
+                {activeCompany?.name || 'Seleccionar Empresa'}
+              </span>
+              <span className="text-[10px] text-[#86868b] uppercase tracking-wider font-medium">
+                AlCheque
+              </span>
+            </div>
+          </div>
+          <ChevronsUpDown size={14} className="text-[#86868b] shrink-0 opacity-50 group-hover:opacity-100 transition-opacity" />
+        </Link>
       </div>
       
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">

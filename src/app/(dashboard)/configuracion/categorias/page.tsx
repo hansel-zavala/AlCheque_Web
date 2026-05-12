@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Loader2, AlertCircle, X, Check } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
+import { useCompanyStore } from '@/store/useCompanyStore';
 
 type Categoria = {
   id: string;
@@ -28,13 +29,16 @@ export default function CategoriasPage() {
   const [editingCatId, setEditingCatId] = useState<string | null>(null);
   const [editCatNombre, setEditCatNombre] = useState('');
   const [editCatTipo, setEditCatTipo] = useState<'ingreso' | 'egreso'>('ingreso');
+  const { activeCompany } = useCompanyStore();
 
   const fetchCategorias = async () => {
+    if (!activeCompany) return;
     setLoading(true);
     setErrorMsg('');
     const { data, error } = await supabase
       .from('categorias')
       .select('*')
+      .eq('company_id', activeCompany.id)
       .order('nombre', { ascending: true });
 
     if (error) {
@@ -52,7 +56,7 @@ export default function CategoriasPage() {
 
   useEffect(() => {
     fetchCategorias();
-  }, []);
+  }, [activeCompany]);
 
   const handleCrearCategoria = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,7 +67,7 @@ export default function CategoriasPage() {
 
     const { data, error } = await supabase
       .from('categorias')
-      .insert([{ nombre: nuevaCatNombre, tipo: nuevaCatTipo, activa: true }])
+      .insert([{ nombre: nuevaCatNombre, tipo: nuevaCatTipo, activa: true, company_id: activeCompany?.id }])
       .select();
 
     setIsSubmitting(false);

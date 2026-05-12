@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { X, UploadCloud, Loader2 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { formatLocalDateInputValue } from '@/utils/date';
+import { useCompanyStore } from '@/store/useCompanyStore';
 
 type Categoria = { id: string; nombre: string };
 
@@ -35,6 +36,7 @@ export function TransactionForm({ type, onClose, onSuccess, initialData }: Trans
   const [loading, setLoading] = useState(false);
   const [fetchingCats, setFetchingCats] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
+  const { activeCompany } = useCompanyStore();
 
   // Form values
   const [monto, setMonto] = useState(initialData ? (initialData.monto_usd ? initialData.monto_usd.toString() : initialData.monto_hnl.toString()) : '');
@@ -51,6 +53,7 @@ export function TransactionForm({ type, onClose, onSuccess, initialData }: Trans
       const { data, error } = await supabase
         .from('categorias')
         .select('id, nombre')
+        .eq('company_id', activeCompany?.id)
         .eq('tipo', type)
         .eq('activa', true)
         .returns<Categoria[]>();
@@ -65,8 +68,10 @@ export function TransactionForm({ type, onClose, onSuccess, initialData }: Trans
       }
       setFetchingCats(false);
     }
-    loadCategories();
-  }, [type, supabase]);
+    if (activeCompany) {
+      loadCategories();
+    }
+  }, [type, supabase, activeCompany]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,7 +118,8 @@ export function TransactionForm({ type, onClose, onSuccess, initialData }: Trans
       descripcion,
       numero_recibo: numeroRecibo || null,
       comprobante_url,
-      estado: 'pagado', 
+      estado: 'pagado',
+      company_id: activeCompany?.id
     };
 
     let errorResult;

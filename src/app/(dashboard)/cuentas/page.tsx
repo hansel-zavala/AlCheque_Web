@@ -5,6 +5,7 @@ import { Search, AlertCircle, CheckCircle, HandCoins, Plus, Loader2, CalendarClo
 import { createClient } from '@/utils/supabase/client';
 import dynamic from 'next/dynamic';
 import { formatLocalDateInputValue, parseDateOnly } from '@/utils/date';
+import { useCompanyStore } from '@/store/useCompanyStore';
 
 const CuentaModal = dynamic(
   () => import('@/components/CuentaModal').then((m) => m.CuentaModal),
@@ -41,8 +42,11 @@ export default function CuentasPage() {
   const [isCuentaModalOpen, setIsCuentaModalOpen] = useState(false);
   const [isAbonoModalOpen, setIsAbonoModalOpen] = useState(false);
   const [selectedCuenta, setSelectedCuenta] = useState<Cuenta | null>(null);
+  const { activeCompany } = useCompanyStore();
 
   const fetchCuentas = useCallback(async () => {
+    if (!activeCompany) return;
+    
     setLoading(true);
     const { data } = await supabase
       .from('cuentas_por_cobrar')
@@ -51,6 +55,7 @@ export default function CuentasPage() {
         pacientes(nombre_completo, codigo_interno),
         servicios(nombre)
       `)
+      .eq('company_id', activeCompany.id)
       .order('fecha_vencimiento', { ascending: true })
       .returns<CuentaRow[]>();
 
@@ -67,7 +72,7 @@ export default function CuentasPage() {
       setCuentas(procesadas);
     }
     setLoading(false);
-  }, [supabase]);
+  }, [supabase, activeCompany]);
 
   useEffect(() => {
     fetchCuentas();

@@ -2,8 +2,9 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { X, User, Users, BriefcaseMedical, Loader2, Save, Plus, Trash2 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { formatLocalDateInputValue, parseDateOnly } from '@/utils/date';
+import { useCompanyStore } from '@/store/useCompanyStore';
 
-type ServicioCatalogo = { id: string; nombre: string; costo_hnl: number };
+type ServicioCatalogo = { id: string; nombre: string; costo_hnl: number; duracion_meses: number };
 
 type PacienteRow = {
   id: string;
@@ -38,6 +39,7 @@ export function PacienteDrawer({ isOpen, onClose, pacienteId, onSuccess }: Pacie
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'perfil' | 'servicios'>('perfil');
+  const { activeCompany } = useCompanyStore();
 
   // Datos Estudiante
   const [codigoInterno, setCodigoInterno] = useState('');
@@ -57,22 +59,26 @@ export function PacienteDrawer({ isOpen, onClose, pacienteId, onSuccess }: Pacie
   const [serviciosAsignados, setServiciosAsignados] = useState<ServicioAsignadoRow[]>([]);
   const [nuevoServicioId, setNuevoServicioId] = useState('');
   const [fechaInicioServicio, setFechaInicioServicio] = useState(formatLocalDateInputValue());
+  const [cobroInicialPagado, setCobroInicialPagado] = useState(false);
 
   const resetForm = useCallback(() => {
     setCodigoInterno(''); setNombreCompleto(''); setFechaNacimiento(''); setGenero('Masculino'); setGradoEscolar('');
     setNombreTutor(''); setTelefonoTutor(''); setEmailTutor(''); setRelacionTutor('Madre');
     setActiveTab('perfil');
     setServiciosAsignados([]);
+    setCobroInicialPagado(false);
   }, []);
 
   const loadCatalog = useCallback(async () => {
+    if (!activeCompany) return;
     const { data } = await supabase
       .from('servicios')
-      .select('id, nombre, costo_hnl')
+      .select('id, nombre, costo_hnl, duracion_meses')
+      .eq('company_id', activeCompany.id)
       .eq('activo', true)
       .returns<ServicioCatalogo[]>();
     if (data) setServiciosCatalogo(data);
-  }, [supabase]);
+  }, [supabase, activeCompany]);
 
   const loadPaciente = useCallback(async (id: string) => {
     setLoading(true);
@@ -134,7 +140,8 @@ export function PacienteDrawer({ isOpen, onClose, pacienteId, onSuccess }: Pacie
       relacion_tutor: relacionTutor,
       // Para retrocompatibilidad con esquema inicial
       tarifa_mensual: 0,
-      activo: true
+      activo: true,
+      company_id: activeCompany?.id
     };
 
     if (pacienteId) {
@@ -160,20 +167,81 @@ export function PacienteDrawer({ isOpen, onClose, pacienteId, onSuccess }: Pacie
     if (!pacienteId || !nuevoServicioId) return;
     setSaving(true);
     
-    // Calcular próxima fecha de cobro sumando 1 mes a la fecha de inicio
-    const nextDate = new Date(fechaInicioServicio);
-    nextDate.setMonth(nextDate.getMonth() + 1);
+    const selectedService = serviciosCatalogo.find(s => s.id === nuevoServicioId);
+    const monthsToAdd = selectedService?.duracion_meses ?? 1;
+
+    // Calcular próxima fecha de cobro sumando los meses correspondientes usando la zona local
+    const nextDate = parseDateOnly(fechaInicioServicio);
+    if (monthsToAdd > 0) {
+      nextDate.setMonth(nextDate.getMonth() + monthsToAdd);
+    }
 
     const { error } = await supabase.from('pacientes_servicios').insert([{
       paciente_id: pacienteId,
       servicio_id: nuevoServicioId,
       fecha_inicio: fechaInicioServicio,
       fecha_proximo_cobro: formatLocalDateInputValue(nextDate),
-      activo: true
+      activo: true,
+      company_id: activeCompany?.id
     }]);
 
     if (!error) {
+      if (cobroInicialPagado) {
+        // Crear cuenta por cobrar pagada
+        const { data: cuenta } = await supabase.from('cuentas_por_cobrar').insert([{
+          paciente_id: pacienteId,
+          servicio_id: nuevoServicioId,
+          monto_total: selectedService?.costo_hnl || 0,
+          subtotal: selectedService?.costo_hnl || 0,
+          fecha_vencimiento: fechaInicioServicio,
+          estado: 'pagada',
+          monto_pagado: selectedService?.costo_hnl || 0,
+          company_id: activeCompany?.id
+        }]).select().single();
+
+        if (cuenta) {
+          // Crear abono
+          await supabase.from('abonos').insert([{
+            cuenta_id: cuenta.id,
+            monto: selectedService?.costo_hnl || 0,
+            fecha: fechaInicioServicio,
+            metodo_pago: 'efectivo',
+            company_id: activeCompany?.id
+          }]);
+
+          // Buscar categoría "Cobro de Servicios"
+          const { data: catData } = await supabase
+            .from('categorias')
+            .select('id')
+            .eq('nombre', 'Cobro de Servicios')
+            .eq('tipo', 'ingreso')
+            .eq('company_id', activeCompany?.id)
+            .limit(1);
+          
+          let catId = catData?.[0]?.id;
+          if (!catId) {
+            const { data: newCat } = await supabase.from('categorias').insert([{ 
+              nombre: 'Cobro de Servicios', tipo: 'ingreso', company_id: activeCompany?.id 
+            }]).select().single();
+            catId = newCat?.id;
+          }
+
+          // Crear transacción
+          await supabase.from('transacciones').insert([{
+            tipo: 'ingreso',
+            monto_hnl: selectedService?.costo_hnl || 0,
+            fecha: fechaInicioServicio,
+            descripcion: `Cobro Adelantado: ${nombreCompleto} - ${selectedService?.nombre}`,
+            categoria_id: catId,
+            metodo_pago: 'efectivo',
+            estado: 'pagado',
+            company_id: activeCompany?.id
+          }]);
+        }
+      }
+
       setNuevoServicioId('');
+      setCobroInicialPagado(false);
       loadServiciosAsignados(pacienteId);
     } else {
       alert(error.message);
@@ -306,6 +374,12 @@ export function PacienteDrawer({ isOpen, onClose, pacienteId, onSuccess }: Pacie
                   <Plus size={16}/> Agregar
                 </button>
               </div>
+              {nuevoServicioId && (
+                <div className="flex items-center gap-2 px-1">
+                  <input type="checkbox" id="cobro_inicial" checked={cobroInicialPagado} onChange={e=>setCobroInicialPagado(e.target.checked)} className="rounded text-brand-600 focus:ring-brand-500 border-slate-300 w-4 h-4"/>
+                  <label htmlFor="cobro_inicial" className="text-sm font-medium text-slate-700 cursor-pointer">El paciente está pagando el primer ciclo hoy (Generar cobro e ingreso automáticamente)</label>
+                </div>
+              )}
 
               <div>
                 <h4 className="text-sm font-bold text-slate-700 mb-3">Servicios Actualmente Asignados</h4>
@@ -339,12 +413,17 @@ export function PacienteDrawer({ isOpen, onClose, pacienteId, onSuccess }: Pacie
                                     subtotal: ps.servicios?.costo_hnl,
                                     fecha_vencimiento: ps.fecha_proximo_cobro,
                                     estado: 'al_dia',
-                                    monto_pagado: 0
+                                    monto_pagado: 0,
+                                    company_id: activeCompany?.id
                                   }]);
 
-                                  // Actualizar próxima fecha (Asume mensual por defecto para el MVP)
+                                  // Actualizar próxima fecha (Usa la duración del servicio)
+                                  const s = serviciosCatalogo.find(srv => srv.id === ps.servicio_id);
+                                  const monthsToAdd = s?.duracion_meses ?? 1;
                                   const nextD = parseDateOnly(ps.fecha_proximo_cobro);
-                                  nextD.setMonth(nextD.getMonth() + 1);
+                                  if (monthsToAdd > 0) {
+                                    nextD.setMonth(nextD.getMonth() + monthsToAdd);
+                                  }
                                   await supabase.from('pacientes_servicios').update({
                                     fecha_proximo_cobro: formatLocalDateInputValue(nextD)
                                   }).eq('id', ps.id);

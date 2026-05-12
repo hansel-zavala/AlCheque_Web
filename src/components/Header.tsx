@@ -2,9 +2,11 @@
 
 import { Bell, Search, User } from 'lucide-react';
 import { usePathname } from 'next/navigation';
+import { useCompanyStore } from '@/store/useCompanyStore';
 
 export function Header() {
   const pathname = usePathname();
+  const { activeCompany } = useCompanyStore();
 
   // Basic title mapping based on route
   const getPageTitle = () => {
@@ -21,6 +23,11 @@ export function Header() {
     <header className="h-16 bg-[#f5f5f7]/70 backdrop-blur-xl flex items-center px-8 justify-between sticky top-0 z-10">
       <div className="flex items-center gap-4">
         <h2 className="text-[22px] font-semibold text-[#1d1d1f] tracking-tight">{getPageTitle()}</h2>
+        {activeCompany && (
+          <span className="hidden md:inline-flex items-center px-2.5 py-0.5 rounded-full bg-brand-100 text-brand-700 text-xs font-medium border border-brand-200 shadow-sm">
+            {activeCompany.name}
+          </span>
+        )}
       </div>
 
       <div className="flex items-center space-x-5">

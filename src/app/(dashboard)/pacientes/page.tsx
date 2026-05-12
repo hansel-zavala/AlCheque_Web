@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Search, UserPlus, FileText, Loader2, Users } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import dynamic from 'next/dynamic';
+import { useCompanyStore } from '@/store/useCompanyStore';
 
 const PacienteDrawer = dynamic(
   () => import('@/components/PacienteDrawer').then((m) => m.PacienteDrawer),
@@ -26,17 +27,20 @@ export default function PacientesPage() {
   
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedPacienteId, setSelectedPacienteId] = useState<string | null>(null);
+  const { activeCompany } = useCompanyStore();
 
   const fetchPacientes = useCallback(async () => {
+    if (!activeCompany) return;
     setLoading(true);
     const { data } = await supabase
       .from('pacientes')
       .select('*')
+      .eq('company_id', activeCompany.id)
       .order('nombre_completo', { ascending: true });
        
     if (data) setPacientes(data);
     setLoading(false);
-  }, [supabase]);
+  }, [supabase, activeCompany]);
 
   useEffect(() => {
     fetchPacientes();

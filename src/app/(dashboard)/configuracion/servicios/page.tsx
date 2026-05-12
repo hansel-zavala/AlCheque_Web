@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Loader2, AlertCircle, Check, X, Calendar, DollarSign } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
+import { useCompanyStore } from '@/store/useCompanyStore';
 
 type Servicio = {
   id: string;
@@ -30,17 +31,20 @@ export default function ServiciosCatalogPage() {
   const [editNombre, setEditNombre] = useState('');
   const [editCosto, setEditCosto] = useState('');
   const [editDuracion, setEditDuracion] = useState('1');
+  const { activeCompany } = useCompanyStore();
 
   useEffect(() => {
     fetchServicios();
-  }, []);
+  }, [activeCompany]);
 
   const fetchServicios = async () => {
+    if (!activeCompany) return;
     setLoading(true);
     setErrorMsg('');
     const { data, error } = await supabase
       .from('servicios')
       .select('*')
+      .eq('company_id', activeCompany.id)
       .order('nombre', { ascending: true });
 
     if (error) {
@@ -66,7 +70,8 @@ export default function ServiciosCatalogPage() {
       nombre,
       costo_hnl: parseFloat(costo),
       duracion_meses: parseInt(duracion),
-      activo: true
+      activo: true,
+      company_id: activeCompany?.id
     };
 
     const { data, error } = await supabase
