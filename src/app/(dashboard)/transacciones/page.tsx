@@ -40,6 +40,15 @@ export default function TransaccionesPage() {
   const [transacciones, setTransacciones] = useState<Transaccion[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'todos' | 'ingresos' | 'egresos' | 'anulados'>('todos');
+  
+  // Nuevos filtros
+  const [searchTerm, setSearchTerm] = useState('');
+  const [timeFilter, setTimeFilter] = useState<'todos' | 'semana' | 'mes' | 'año'>('todos');
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
+  const [categoryFilter, setCategoryFilter] = useState<string>('todas');
+  const [pacienteFilter, setPacienteFilter] = useState<string>('todos');
+  const [pacientes, setPacientes] = useState<{id: string; nombre_completo: string | null}[]>([]);
+
   const supabase = useMemo(() => createClient(), []);
   const { activeCompany } = useCompanyStore();
 
@@ -63,6 +72,11 @@ export default function TransaccionesPage() {
     } else if (data) {
       setTransacciones(data);
     }
+    
+    // Cargar pacientes para el filtro
+    const { data: pData } = await supabase.from('pacientes').select('id, nombre_completo').eq('company_id', activeCompany.id);
+    if (pData) setPacientes(pData);
+
     setLoading(false);
   }, [supabase, activeCompany]);
 
@@ -76,20 +90,70 @@ export default function TransaccionesPage() {
     fetchTransacciones(); // Recargar datos sin refrescar la página
   };
 
+  const uniqueCategories = useMemo(() => {
+    return Array.from(new Set(transacciones.map(t => t.categorias?.nombre).filter(Boolean))) as string[];
+  }, [transacciones]);
+
   // Filtrado y ordenamiento en cliente
   const filteredTransacciones = transacciones.filter(t => {
-    if (filter === 'ingresos') return t.tipo === 'ingreso' && !t.anulado;
-    if (filter === 'egresos') return t.tipo === 'egreso' && !t.anulado;
-    if (filter === 'anulados') return t.anulado === true;
-    return true; // todos
+    // 1. Filtro base de Pestañas
+    if (filter === 'ingresos' && (t.tipo !== 'ingreso' || t.anulado)) return false;
+    if (filter === 'egresos' && (t.tipo !== 'egreso' || t.anulado)) return false;
+    if (filter === 'anulados' && !t.anulado) return false;
+
+    // 2. Filtro de Búsqueda de Texto
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      const descMatch = t.descripcion?.toLowerCase().includes(searchLower) || false;
+      const recMatch = t.numero_recibo?.toLowerCase().includes(searchLower) || false;
+      if (!descMatch && !recMatch) return false;
+    }
+
+    // 3. Filtro de Tiempo
+    if (timeFilter !== 'todos') {
+      const tDate = parseDateOnly(t.fecha);
+      const now = new Date();
+      let isIncluded = false;
+      
+      const firstDayOfWeek = new Date(now);
+      const day = firstDayOfWeek.getDay();
+      const diff = firstDayOfWeek.getDate() - day + (day === 0 ? -6 : 1);
+      firstDayOfWeek.setDate(diff);
+      firstDayOfWeek.setHours(0,0,0,0);
+      
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const firstDayOfYear = new Date(now.getFullYear(), 0, 1);
+
+      if (timeFilter === 'semana') isIncluded = tDate >= firstDayOfWeek;
+      else if (timeFilter === 'mes') isIncluded = tDate >= firstDayOfMonth;
+      else if (timeFilter === 'año') isIncluded = tDate >= firstDayOfYear;
+
+      if (!isIncluded) return false;
+    }
+
+    // 4. Filtro de Categoría
+    if (categoryFilter !== 'todas' && t.categorias?.nombre !== categoryFilter) return false;
+
+    // 5. Filtro de Paciente (buscando nombre en la descripción)
+    if (pacienteFilter !== 'todos') {
+      const p = pacientes.find(px => px.id === pacienteFilter);
+      if (p && p.nombre_completo && !t.descripcion?.includes(p.nombre_completo)) return false;
+    }
+
+    return true;
   }).sort((a, b) => {
+    // Siempre agrupar los anulados al final si estamos en "Todos"
     if (filter === 'todos') {
-      // Si uno está anulado y el otro no, el anulado va al final
       if (a.anulado && !b.anulado) return 1;
       if (!a.anulado && b.anulado) return -1;
     }
-    // Si no, mantener el orden de fecha descendente que ya viene
-    return 0;
+    
+    // Ordenar por fecha
+    const dateA = new Date(a.fecha).getTime();
+    const dateB = new Date(b.fecha).getTime();
+    
+    if (sortOrder === 'desc') return dateB - dateA;
+    return dateA - dateB;
   });
 
   return (
@@ -112,13 +176,49 @@ export default function TransaccionesPage() {
             <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
             <input 
               type="text" 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Buscar por descripción o recibo..." 
               className="pl-10 pr-4 py-2 w-full rounded-lg border border-border bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-sm transition-all"
             />
           </div>
-          <button className="p-2 text-slate-400 hover:text-brand-600 bg-slate-50 hover:bg-brand-50 rounded-lg border border-border transition-colors">
-            <FileDown size={20} />
-          </button>
+        </div>
+      </div>
+
+      {/* Filtros Avanzados */}
+      <div className="bg-surface p-4 rounded-xl shadow-sm border border-border flex flex-wrap gap-4 items-end mb-4">
+        <div className="flex flex-col min-w-[140px]">
+          <label className="text-xs font-semibold text-slate-500 mb-1">Periodo</label>
+          <select value={timeFilter} onChange={e=>setTimeFilter(e.target.value as any)} className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-500/20">
+            <option value="todos">Todos los tiempos</option>
+            <option value="semana">Esta Semana</option>
+            <option value="mes">Este Mes</option>
+            <option value="año">Este Año</option>
+          </select>
+        </div>
+
+        <div className="flex flex-col min-w-[160px]">
+          <label className="text-xs font-semibold text-slate-500 mb-1">Orden de Fecha</label>
+          <select value={sortOrder} onChange={e=>setSortOrder(e.target.value as any)} className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-500/20">
+            <option value="desc">Más recientes primero</option>
+            <option value="asc">Más antiguas primero</option>
+          </select>
+        </div>
+
+        <div className="flex flex-col min-w-[160px]">
+          <label className="text-xs font-semibold text-slate-500 mb-1">Categoría</label>
+          <select value={categoryFilter} onChange={e=>setCategoryFilter(e.target.value)} className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-500/20">
+            <option value="todas">Todas</option>
+            {uniqueCategories.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
+
+        <div className="flex flex-col min-w-[160px] flex-1">
+          <label className="text-xs font-semibold text-slate-500 mb-1">Paciente Asignado</label>
+          <select value={pacienteFilter} onChange={e=>setPacienteFilter(e.target.value)} className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-500/20 w-full">
+            <option value="todos">Cualquiera</option>
+            {pacientes.map(p => <option key={p.id} value={p.id}>{p.nombre_completo}</option>)}
+          </select>
         </div>
       </div>
 
