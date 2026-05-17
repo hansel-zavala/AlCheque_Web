@@ -63,13 +63,38 @@ export function PacienteDrawer({ isOpen, onClose, pacienteId, onSuccess }: Pacie
   const [fechaInicioServicio, setFechaInicioServicio] = useState(formatLocalDateInputValue());
   const [cobroInicialPagado, setCobroInicialPagado] = useState(false);
 
-  const resetForm = useCallback(() => {
-    setCodigoInterno(''); setNombreCompleto(''); setFechaNacimiento(''); setGenero('Masculino'); setGradoEscolar('');
+  const resetForm = useCallback(async () => {
+    setNombreCompleto(''); setFechaNacimiento(''); setGenero('Masculino'); setGradoEscolar('');
     setNombreTutor(''); setTelefonoTutor(''); setEmailTutor(''); setRelacionTutor('Madre');
     setActiveTab('perfil');
     setServiciosAsignados([]);
     setCobroInicialPagado(false);
-  }, []);
+
+    if (activeCompany) {
+      const { data } = await supabase
+        .from('pacientes')
+        .select('codigo_interno')
+        .eq('company_id', activeCompany.id)
+        .like('codigo_interno', 'EXP-%');
+      
+      if (data && data.length > 0) {
+        const maxNum = data.reduce((max, paciente) => {
+          if (!paciente.codigo_interno) return max;
+          const match = paciente.codigo_interno.match(/EXP-(\d+)/);
+          if (match && match[1]) {
+            const num = parseInt(match[1], 10);
+            return num > max ? num : max;
+          }
+          return max;
+        }, 0);
+        setCodigoInterno(`EXP-${maxNum + 1}`);
+      } else {
+        setCodigoInterno('EXP-1');
+      }
+    } else {
+      setCodigoInterno('');
+    }
+  }, [supabase, activeCompany]);
 
   const loadCatalog = useCallback(async () => {
     if (!activeCompany) return;

@@ -30,7 +30,20 @@ export function PacienteMatricula({ pacienteId }: PacienteMatriculaProps) {
 
   // Form para pagar matrícula
   const [fechaPago, setFechaPago] = useState(formatLocalDateInputValue());
-  const [notas, setNotas] = useState('');
+  const [metodoPago, setMetodoPago] = useState('Efectivo');
+
+  // Form para generar matrícula
+  const [montoGenerar, setMontoGenerar] = useState('');
+
+  useEffect(() => {
+    if (!activeCompany) return;
+    supabase.from('company_settings').select('monto_matricula').eq('company_id', activeCompany.id).single()
+      .then(({data}) => {
+        if (data && data.monto_matricula) {
+          setMontoGenerar(String(data.monto_matricula));
+        }
+      });
+  }, [supabase, activeCompany]);
 
   const fetchMatriculas = useCallback(async () => {
     setLoading(true);
@@ -56,7 +69,7 @@ export function PacienteMatricula({ pacienteId }: PacienteMatriculaProps) {
     await supabase.from('matriculas').update({
       estado: 'pagada',
       fecha_pago: fechaPago,
-      notas: notas || null,
+      notas: metodoPago,
     }).eq('id', matriculaActual.id);
 
     // 2. Buscar/crear categoría "Matrículas"
@@ -84,7 +97,7 @@ export function PacienteMatricula({ pacienteId }: PacienteMatriculaProps) {
         fecha: fechaPago,
         descripcion: `Matrícula ${ANIO_ACTUAL} - Paciente`,
         categoria_id: catId,
-        metodo_pago: 'efectivo',
+        metodo_pago: metodoPago,
         estado: 'pagado',
         paciente_id: pacienteId,
         company_id: activeCompany.id,
@@ -98,14 +111,7 @@ export function PacienteMatricula({ pacienteId }: PacienteMatriculaProps) {
   const handleGenerarMatricula = async () => {
     if (!activeCompany) return;
 
-    // Obtener monto de configuración
-    const { data: settings } = await supabase
-      .from('company_settings')
-      .select('monto_matricula')
-      .eq('company_id', activeCompany.id)
-      .single();
-
-    const monto = settings?.monto_matricula ?? 0;
+    const monto = parseFloat(montoGenerar) || 0;
 
     setSaving(true);
     const { error } = await supabase.from('matriculas').insert([{
@@ -150,11 +156,25 @@ export function PacienteMatricula({ pacienteId }: PacienteMatriculaProps) {
         </div>
 
         {!matriculaActual ? (
-          <div className="text-center py-2">
-            <p className="text-sm text-slate-600 mb-3">Este paciente no tiene matrícula para {ANIO_ACTUAL}.</p>
+          <div className="text-center py-2 space-y-4">
+            <p className="text-sm text-slate-600">Este paciente no tiene matrícula para {ANIO_ACTUAL}.</p>
+            
+            <div className="max-w-[200px] mx-auto text-left">
+              <label className="block text-xs font-medium text-slate-500 mb-1">Monto a Cobrar (L)</label>
+              <input 
+                type="number" 
+                min="0" 
+                step="0.01"
+                value={montoGenerar}
+                onChange={e => setMontoGenerar(e.target.value)}
+                className="px-3 py-2 w-full rounded-lg border border-border bg-white text-sm focus:ring-2 focus:ring-brand-500/20" 
+                placeholder="Ej. 500.00"
+              />
+            </div>
+
             <button
               onClick={handleGenerarMatricula}
-              disabled={saving}
+              disabled={saving || !montoGenerar}
               className="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 mx-auto transition-colors disabled:opacity-50"
             >
               {saving ? <Loader2 size={14} className="animate-spin" /> : <GraduationCap size={14} />}
@@ -185,9 +205,17 @@ export function PacienteMatricula({ pacienteId }: PacienteMatriculaProps) {
                   className="px-3 py-1.5 w-full rounded-lg border border-border bg-white text-sm focus:ring-2 focus:ring-brand-500/20" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Notas (opcional)</label>
-                <input type="text" value={notas} onChange={e => setNotas(e.target.value)} placeholder="Ej. Pago en efectivo"
-                  className="px-3 py-1.5 w-full rounded-lg border border-border bg-white text-sm focus:ring-2 focus:ring-brand-500/20" />
+                <label className="block text-xs font-medium text-slate-500 mb-1">Método de Pago</label>
+                <select 
+                  value={metodoPago} 
+                  onChange={e => setMetodoPago(e.target.value)}
+                  className="px-3 py-1.5 w-full rounded-lg border border-border bg-white text-sm focus:ring-2 focus:ring-brand-500/20"
+                >
+                  <option value="Efectivo">Efectivo</option>
+                  <option value="Transferencia">Transferencia</option>
+                  <option value="Tarjeta de Credito/Debito">Tarjeta de Crédito/Débito</option>
+                  <option value="Cheque">Cheque</option>
+                </select>
               </div>
             </div>
             <button
