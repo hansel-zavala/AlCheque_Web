@@ -252,8 +252,8 @@ export function TransactionForm({ type, onClose, onSuccess, initialData }: Trans
                 className="px-4 py-2 w-full rounded-lg border border-border bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-slate-700"
               >
                 <option value="efectivo">Efectivo</option>
-                <option value="transferencia">Transferencia Bancaria</option>
-                <option value="tarjeta">Tarjeta de Débito/Crédito</option>
+                <option value="transferencia">Transferencia</option>
+                <option value="tarjeta de credito/debito">Tarjeta de Crédito/Débito</option>
                 <option value="cheque">Cheque</option>
               </select>
             </div>

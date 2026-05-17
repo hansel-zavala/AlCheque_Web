@@ -62,6 +62,7 @@ export function PacienteDrawer({ isOpen, onClose, pacienteId, onSuccess }: Pacie
   const [nuevoServicioId, setNuevoServicioId] = useState('');
   const [fechaInicioServicio, setFechaInicioServicio] = useState(formatLocalDateInputValue());
   const [estadoPagoInicial, setEstadoPagoInicial] = useState('pagado');
+  const [metodoPagoInicial, setMetodoPagoInicial] = useState('efectivo');
 
   const resetForm = useCallback(async () => {
     setNombreCompleto(''); setFechaNacimiento(''); setGenero('Masculino'); setGradoEscolar('');
@@ -231,7 +232,7 @@ export function PacienteDrawer({ isOpen, onClose, pacienteId, onSuccess }: Pacie
           cuenta_id: cuenta.id,
           monto: selectedService?.costo_hnl || 0,
           fecha: fechaInicioServicio,
-          metodo_pago: 'efectivo',
+          metodo_pago: metodoPagoInicial,
           company_id: activeCompany?.id
         }]);
 
@@ -259,7 +260,7 @@ export function PacienteDrawer({ isOpen, onClose, pacienteId, onSuccess }: Pacie
           fecha: fechaInicioServicio,
           descripcion: `Cobro Adelantado: ${nombreCompleto} - ${selectedService?.nombre}`,
           categoria_id: catId,
-          metodo_pago: 'efectivo',
+          metodo_pago: metodoPagoInicial,
           estado: 'pagado',
           company_id: activeCompany?.id
         }]);
@@ -267,6 +268,7 @@ export function PacienteDrawer({ isOpen, onClose, pacienteId, onSuccess }: Pacie
 
       setNuevoServicioId('');
       setEstadoPagoInicial('pagado');
+      setMetodoPagoInicial('efectivo');
       loadServiciosAsignados(pacienteId);
     } else {
       alert(error.message);
@@ -408,16 +410,34 @@ export function PacienteDrawer({ isOpen, onClose, pacienteId, onSuccess }: Pacie
                 </button>
               </div>
               {nuevoServicioId && (
-                <div className="flex flex-col gap-1.5 px-1 mt-3 mb-2">
-                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Estado del Primer Mes</label>
-                  <select 
-                    value={estadoPagoInicial} 
-                    onChange={e => setEstadoPagoInicial(e.target.value)}
-                    className="px-3 py-2 w-full md:w-2/3 rounded-lg border border-brand-200 bg-white text-sm text-slate-700 focus:ring-2 focus:ring-brand-500/20 transition-all"
-                  >
-                    <option value="pagado">Ya lo pagó hoy (Se registra el ingreso en caja)</option>
-                    <option value="por_pagar">Por Pagar (Se genera la cuenta como deuda)</option>
-                  </select>
+                <div className="flex flex-col md:flex-row gap-3 px-1 mt-3 mb-2">
+                  <div className="flex flex-col gap-1.5 w-full">
+                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Estado del Primer Mes</label>
+                    <select 
+                      value={estadoPagoInicial} 
+                      onChange={e => setEstadoPagoInicial(e.target.value)}
+                      className="px-3 py-2 w-full rounded-lg border border-brand-200 bg-white text-sm text-slate-700 focus:ring-2 focus:ring-brand-500/20 transition-all"
+                    >
+                      <option value="pagado">Ya lo pagó hoy (Se registra el ingreso en caja)</option>
+                      <option value="por_pagar">Por Pagar (Se genera la cuenta como deuda)</option>
+                    </select>
+                  </div>
+
+                  {estadoPagoInicial === 'pagado' && (
+                    <div className="flex flex-col gap-1.5 w-full">
+                      <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Método de Pago</label>
+                      <select 
+                        value={metodoPagoInicial} 
+                        onChange={e => setMetodoPagoInicial(e.target.value)}
+                        className="px-3 py-2 w-full rounded-lg border border-emerald-200 bg-white text-sm text-slate-700 focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                      >
+                        <option value="efectivo">Efectivo</option>
+                        <option value="transferencia">Transferencia</option>
+                        <option value="tarjeta de credito/debito">Tarjeta de Crédito/Débito</option>
+                        <option value="cheque">Cheque</option>
+                      </select>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -428,7 +448,9 @@ export function PacienteDrawer({ isOpen, onClose, pacienteId, onSuccess }: Pacie
                     <p className="text-sm text-slate-500 italic bg-white p-4 rounded-xl border border-slate-100 text-center">No tiene ningún servicio asignado.</p>
                   ) : (
                     serviciosAsignados.map(ps => {
-                      const isDue = new Date(ps.fecha_proximo_cobro) <= new Date();
+                      const srv = serviciosCatalogo.find(srv => srv.id === ps.servicio_id);
+                      const isOneTime = srv?.duracion_meses === 0;
+                      const isDue = !isOneTime && new Date(ps.fecha_proximo_cobro) <= new Date();
                       return (
                         <div key={ps.id} className={`bg-white p-4 rounded-xl border ${isDue ? 'border-orange-300 shadow-sm' : 'border-slate-200 shadow-sm'} flex justify-between items-center transition-all`}>
                           <div>

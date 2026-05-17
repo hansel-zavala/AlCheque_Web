@@ -139,7 +139,8 @@ export function AbonoModal({ isOpen, onClose, cuenta, onSuccess }: AbonoModalPro
               <select required value={metodo} onChange={e=>setMetodo(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-border bg-slate-50 focus:ring-2 focus:ring-brand-500/20 text-sm">
                 <option value="efectivo">Efectivo</option>
                 <option value="transferencia">Transferencia</option>
-                <option value="tarjeta">Tarjeta</option>
+                <option value="tarjeta de credito/debito">Tarjeta de Crédito/Débito</option>
+                <option value="cheque">Cheque</option>
               </select>
             </div>
           </div>
