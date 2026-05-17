@@ -6,6 +6,7 @@ import dynamic from 'next/dynamic';
 import { createClient } from '@/utils/supabase/client';
 import { parseDateOnly } from '@/utils/date';
 import { useCompanyStore } from '@/store/useCompanyStore';
+import { TablePagination } from '@/components/ui/TablePagination';
 
 const TransactionForm = dynamic(
   () => import('@/components/TransactionForm').then((m) => m.TransactionForm),
@@ -41,13 +42,17 @@ export default function TransaccionesPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'todos' | 'ingresos' | 'egresos' | 'anulados'>('todos');
   
-  // Nuevos filtros
+  // Filtros
   const [searchTerm, setSearchTerm] = useState('');
   const [timeFilter, setTimeFilter] = useState<'todos' | 'semana' | 'mes' | 'año'>('todos');
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const [categoryFilter, setCategoryFilter] = useState<string>('todas');
   const [pacienteFilter, setPacienteFilter] = useState<string>('todos');
   const [pacientes, setPacientes] = useState<{id: string; nombre_completo: string | null}[]>([]);
+
+  // Paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const supabase = useMemo(() => createClient(), []);
   const { activeCompany } = useCompanyStore();
@@ -155,6 +160,17 @@ export default function TransaccionesPage() {
     if (sortOrder === 'desc') return dateB - dateA;
     return dateA - dateB;
   });
+
+  // Resetear a página 1 cuando cambian los filtros
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filter, searchTerm, timeFilter, categoryFilter, pacienteFilter, sortOrder]);
+
+  // Datos paginados
+  const paginatedTransacciones = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredTransacciones.slice(start, start + pageSize);
+  }, [filteredTransacciones, currentPage, pageSize]);
 
   return (
     <div className="space-y-6">
@@ -278,7 +294,7 @@ export default function TransaccionesPage() {
                 </td>
               </tr>
             ) : (
-              filteredTransacciones.map((t) => (
+              paginatedTransacciones.map((t) => (
                 <tr 
                   key={t.id} 
                   onClick={() => setSelectedTransaction(t)}
@@ -314,6 +330,13 @@ export default function TransaccionesPage() {
             )}
           </tbody>
         </table>
+        <TablePagination
+          totalItems={filteredTransacciones.length}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+        />
       </div>
 
       {/* Modal condicional para registrar o editar transacciones */}

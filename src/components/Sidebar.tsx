@@ -11,7 +11,8 @@ import {
   CreditCard,
   LogOut,
   Building2,
-  ChevronsUpDown
+  ChevronsUpDown,
+  Stethoscope
 } from 'lucide-react';
 import { logout } from '@/app/(auth)/login/actions';
 import { useCompanyStore } from '@/store/useCompanyStore';
@@ -21,6 +22,7 @@ const navItems = [
   { name: 'Transacciones', href: '/transacciones', icon: ArrowRightLeft },
   { name: 'Cuentas / Becas', href: '/cuentas', icon: CreditCard },
   { name: 'Pacientes', href: '/pacientes', icon: Users },
+  { name: 'Terapeutas', href: '/terapeutas', icon: Stethoscope },
   { name: 'Flujo y Reportes', href: '/reportes', icon: PieChart },
   { name: 'Configuración', href: '/configuracion', icon: Settings },
 ];

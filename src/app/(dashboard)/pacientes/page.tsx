@@ -100,8 +100,8 @@ export default function PacientesPage() {
               </tr>
             ) : filteredPacientes.length === 0 ? (
               <tr>
-                <td colSpan={5} className="p-12 text-center text-slate-500 flex flex-col items-center justify-center">
-                  <Users size={40} className="text-slate-300 mb-3" />
+                <td colSpan={5} className="p-12 text-center text-slate-500">
+                  <Users size={40} className="mx-auto text-slate-300 mb-3" />
                   <p className="text-lg font-medium text-slate-700">No hay pacientes registrados</p>
                   <p className="text-sm">Agrega un nuevo paciente para comenzar.</p>
                 </td>

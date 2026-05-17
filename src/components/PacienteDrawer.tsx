@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { X, User, Users, BriefcaseMedical, Loader2, Save, Plus, Trash2 } from 'lucide-react';
+import { X, User, Users, BriefcaseMedical, Loader2, Save, Plus, Trash2, History, GraduationCap } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { formatLocalDateInputValue, parseDateOnly } from '@/utils/date';
 import { useCompanyStore } from '@/store/useCompanyStore';
+import { PacienteHistorial } from '@/components/PacienteHistorial';
+import { PacienteMatricula } from '@/components/PacienteMatricula';
 
 type ServicioCatalogo = { id: string; nombre: string; costo_hnl: number; duracion_meses: number };
 
@@ -38,7 +40,7 @@ export function PacienteDrawer({ isOpen, onClose, pacienteId, onSuccess }: Pacie
   const supabase = useMemo(() => createClient(), []);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<'perfil' | 'servicios'>('perfil');
+  const [activeTab, setActiveTab] = useState<'perfil' | 'servicios' | 'matricula' | 'historial'>('perfil');
   const { activeCompany } = useCompanyStore();
 
   // Datos Estudiante
@@ -274,19 +276,23 @@ export function PacienteDrawer({ isOpen, onClose, pacienteId, onSuccess }: Pacie
 
         {/* Tabs */}
         {pacienteId && (
-          <div className="flex border-b border-border px-6 shrink-0 bg-white">
-            <button 
-              onClick={() => setActiveTab('perfil')}
-              className={`px-4 py-3 font-medium text-sm border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'perfil' ? 'border-brand-500 text-brand-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
-            >
-              <User size={16} /> Datos Personales
-            </button>
-            <button 
-              onClick={() => setActiveTab('servicios')}
-              className={`px-4 py-3 font-medium text-sm border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'servicios' ? 'border-brand-500 text-brand-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
-            >
-              <BriefcaseMedical size={16} /> Servicios Activos
-            </button>
+          <div className="flex border-b border-border px-2 shrink-0 bg-white overflow-x-auto">
+            {([
+              { key: 'perfil', icon: <User size={15}/>, label: 'Datos' },
+              { key: 'servicios', icon: <BriefcaseMedical size={15}/>, label: 'Servicios' },
+              { key: 'matricula', icon: <GraduationCap size={15}/>, label: 'Matrícula' },
+              { key: 'historial', icon: <History size={15}/>, label: 'Historial' },
+            ] as const).map(tab => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`px-4 py-3 font-medium text-sm border-b-2 transition-colors flex items-center gap-1.5 whitespace-nowrap ${
+                  activeTab === tab.key ? 'border-brand-500 text-brand-600' : 'border-transparent text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                {tab.icon} {tab.label}
+              </button>
+            ))}
           </div>
         )}
 
@@ -294,6 +300,10 @@ export function PacienteDrawer({ isOpen, onClose, pacienteId, onSuccess }: Pacie
         <div className="flex-1 overflow-y-auto p-6 bg-slate-50/30">
           {loading ? (
             <div className="flex justify-center py-20"><Loader2 className="animate-spin text-brand-500" size={32} /></div>
+          ) : activeTab === 'matricula' && pacienteId ? (
+            <PacienteMatricula pacienteId={pacienteId} />
+          ) : activeTab === 'historial' && pacienteId ? (
+            <PacienteHistorial pacienteId={pacienteId} nombrePaciente={nombreCompleto} />
           ) : activeTab === 'perfil' ? (
             <form id="perfilForm" onSubmit={handleSavePerfil} className="space-y-8">
               
@@ -462,7 +472,7 @@ export function PacienteDrawer({ isOpen, onClose, pacienteId, onSuccess }: Pacie
         {/* Footer */}
         <div className="px-6 py-4 border-t border-border bg-white flex justify-end gap-3 shrink-0">
           <button onClick={onClose} className="px-5 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors">
-            Cancelar
+            Cerrar
           </button>
           {activeTab === 'perfil' && (
             <button 

@@ -6,6 +6,7 @@ import { createClient } from '@/utils/supabase/client';
 import dynamic from 'next/dynamic';
 import { formatLocalDateInputValue, parseDateOnly } from '@/utils/date';
 import { useCompanyStore } from '@/store/useCompanyStore';
+import { TablePagination } from '@/components/ui/TablePagination';
 
 const CuentaModal = dynamic(
   () => import('@/components/CuentaModal').then((m) => m.CuentaModal),
@@ -43,6 +44,10 @@ export default function CuentasPage() {
   const [isAbonoModalOpen, setIsAbonoModalOpen] = useState(false);
   const [selectedCuenta, setSelectedCuenta] = useState<Cuenta | null>(null);
   const { activeCompany } = useCompanyStore();
+
+  // Paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const fetchCuentas = useCallback(async () => {
     if (!activeCompany) return;
@@ -93,6 +98,17 @@ export default function CuentasPage() {
     if (filter === 'vencidas') return matchesSearch && c.estadoCalculado === 'vencida';
     return matchesSearch;
   });
+
+  // Resetear a página 1 cuando cambian los filtros
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filter, searchTerm]);
+
+  // Datos paginados
+  const paginatedCuentas = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredCuentas.slice(start, start + pageSize);
+  }, [filteredCuentas, currentPage, pageSize]);
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 animate-fade-in">
@@ -155,7 +171,7 @@ export default function CuentasPage() {
                 </td>
               </tr>
             ) : (
-              filteredCuentas.map((c) => {
+              paginatedCuentas.map((c) => {
                 const saldo = parseFloat(c.monto_total) - parseFloat(c.monto_pagado);
                 return (
                   <tr key={c.id} className="hover:bg-slate-50 transition-colors group">
@@ -209,6 +225,13 @@ export default function CuentasPage() {
             )}
           </tbody>
         </table>
+        <TablePagination
+          totalItems={filteredCuentas.length}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+        />
       </div>
 
       <CuentaModal 

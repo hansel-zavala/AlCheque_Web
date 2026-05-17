@@ -1,0 +1,25 @@
+name: Cobros Automáticos Mensuales
+
+on:
+  schedule:
+    # Ejecuta todos los días a las 06:00 AM UTC (12:00 AM Honduras, UTC-6)
+    - cron: '0 6 * * *'
+  # También permite ejecución manual desde GitHub Actions
+  workflow_dispatch:
+
+jobs:
+  generar-cobros:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Llamar Edge Function de Supabase
+        run: |
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X POST "${{ secrets.SUPABASE_FUNCTION_URL }}/generar-cobros-automaticos" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json")
+          echo "HTTP Status: $RESPONSE"
+          if [ "$RESPONSE" != "200" ]; then
+            echo "Error: La función retornó código $RESPONSE"
+            exit 1
+          fi
+          echo "Cobros automáticos ejecutados exitosamente"
