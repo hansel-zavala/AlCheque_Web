@@ -61,14 +61,14 @@ export function PacienteDrawer({ isOpen, onClose, pacienteId, onSuccess }: Pacie
   const [serviciosAsignados, setServiciosAsignados] = useState<ServicioAsignadoRow[]>([]);
   const [nuevoServicioId, setNuevoServicioId] = useState('');
   const [fechaInicioServicio, setFechaInicioServicio] = useState(formatLocalDateInputValue());
-  const [cobroInicialPagado, setCobroInicialPagado] = useState(false);
+  const [estadoPagoInicial, setEstadoPagoInicial] = useState('pagado');
 
   const resetForm = useCallback(async () => {
     setNombreCompleto(''); setFechaNacimiento(''); setGenero('Masculino'); setGradoEscolar('');
     setNombreTutor(''); setTelefonoTutor(''); setEmailTutor(''); setRelacionTutor('Madre');
     setActiveTab('perfil');
     setServiciosAsignados([]);
-    setCobroInicialPagado(false);
+    setEstadoPagoInicial('pagado');
 
     if (activeCompany) {
       const { data } = await supabase
@@ -213,62 +213,60 @@ export function PacienteDrawer({ isOpen, onClose, pacienteId, onSuccess }: Pacie
     }]);
 
     if (!error) {
-      if (cobroInicialPagado) {
-        // Crear cuenta por cobrar pagada
-        const { data: cuenta } = await supabase.from('cuentas_por_cobrar').insert([{
-          paciente_id: pacienteId,
-          servicio_id: nuevoServicioId,
-          monto_total: selectedService?.costo_hnl || 0,
-          subtotal: selectedService?.costo_hnl || 0,
-          fecha_vencimiento: fechaInicioServicio,
-          estado: 'pagada',
-          monto_pagado: selectedService?.costo_hnl || 0,
+      // 1. Siempre crear la cuenta por cobrar inicial para el primer mes
+      const { data: cuenta } = await supabase.from('cuentas_por_cobrar').insert([{
+        paciente_id: pacienteId,
+        servicio_id: nuevoServicioId,
+        monto_total: selectedService?.costo_hnl || 0,
+        subtotal: selectedService?.costo_hnl || 0,
+        fecha_vencimiento: fechaInicioServicio,
+        estado: estadoPagoInicial === 'pagado' ? 'pagada' : 'al_dia',
+        monto_pagado: estadoPagoInicial === 'pagado' ? (selectedService?.costo_hnl || 0) : 0,
+        company_id: activeCompany?.id
+      }]).select().single();
+
+      if (cuenta && estadoPagoInicial === 'pagado') {
+        // Crear abono
+        await supabase.from('abonos').insert([{
+          cuenta_id: cuenta.id,
+          monto: selectedService?.costo_hnl || 0,
+          fecha: fechaInicioServicio,
+          metodo_pago: 'efectivo',
           company_id: activeCompany?.id
-        }]).select().single();
+        }]);
 
-        if (cuenta) {
-          // Crear abono
-          await supabase.from('abonos').insert([{
-            cuenta_id: cuenta.id,
-            monto: selectedService?.costo_hnl || 0,
-            fecha: fechaInicioServicio,
-            metodo_pago: 'efectivo',
-            company_id: activeCompany?.id
-          }]);
-
-          // Buscar categoría "Cobro de Servicios"
-          const { data: catData } = await supabase
-            .from('categorias')
-            .select('id')
-            .eq('nombre', 'Cobro de Servicios')
-            .eq('tipo', 'ingreso')
-            .eq('company_id', activeCompany?.id)
-            .limit(1);
-          
-          let catId = catData?.[0]?.id;
-          if (!catId) {
-            const { data: newCat } = await supabase.from('categorias').insert([{ 
-              nombre: 'Cobro de Servicios', tipo: 'ingreso', company_id: activeCompany?.id 
-            }]).select().single();
-            catId = newCat?.id;
-          }
-
-          // Crear transacción
-          await supabase.from('transacciones').insert([{
-            tipo: 'ingreso',
-            monto_hnl: selectedService?.costo_hnl || 0,
-            fecha: fechaInicioServicio,
-            descripcion: `Cobro Adelantado: ${nombreCompleto} - ${selectedService?.nombre}`,
-            categoria_id: catId,
-            metodo_pago: 'efectivo',
-            estado: 'pagado',
-            company_id: activeCompany?.id
-          }]);
+        // Buscar categoría "Cobro de Servicios"
+        const { data: catData } = await supabase
+          .from('categorias')
+          .select('id')
+          .eq('nombre', 'Cobro de Servicios')
+          .eq('tipo', 'ingreso')
+          .eq('company_id', activeCompany?.id)
+          .limit(1);
+        
+        let catId = catData?.[0]?.id;
+        if (!catId) {
+          const { data: newCat } = await supabase.from('categorias').insert([{ 
+            nombre: 'Cobro de Servicios', tipo: 'ingreso', company_id: activeCompany?.id 
+          }]).select().single();
+          catId = newCat?.id;
         }
+
+        // Crear transacción
+        await supabase.from('transacciones').insert([{
+          tipo: 'ingreso',
+          monto_hnl: selectedService?.costo_hnl || 0,
+          fecha: fechaInicioServicio,
+          descripcion: `Cobro Adelantado: ${nombreCompleto} - ${selectedService?.nombre}`,
+          categoria_id: catId,
+          metodo_pago: 'efectivo',
+          estado: 'pagado',
+          company_id: activeCompany?.id
+        }]);
       }
 
       setNuevoServicioId('');
-      setCobroInicialPagado(false);
+      setEstadoPagoInicial('pagado');
       loadServiciosAsignados(pacienteId);
     } else {
       alert(error.message);
@@ -410,9 +408,16 @@ export function PacienteDrawer({ isOpen, onClose, pacienteId, onSuccess }: Pacie
                 </button>
               </div>
               {nuevoServicioId && (
-                <div className="flex items-center gap-2 px-1">
-                  <input type="checkbox" id="cobro_inicial" checked={cobroInicialPagado} onChange={e=>setCobroInicialPagado(e.target.checked)} className="rounded text-brand-600 focus:ring-brand-500 border-slate-300 w-4 h-4"/>
-                  <label htmlFor="cobro_inicial" className="text-sm font-medium text-slate-700 cursor-pointer">El paciente está pagando el primer ciclo hoy (Generar cobro e ingreso automáticamente)</label>
+                <div className="flex flex-col gap-1.5 px-1 mt-3 mb-2">
+                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Estado del Primer Mes</label>
+                  <select 
+                    value={estadoPagoInicial} 
+                    onChange={e => setEstadoPagoInicial(e.target.value)}
+                    className="px-3 py-2 w-full md:w-2/3 rounded-lg border border-brand-200 bg-white text-sm text-slate-700 focus:ring-2 focus:ring-brand-500/20 transition-all"
+                  >
+                    <option value="pagado">Ya lo pagó hoy (Se registra el ingreso en caja)</option>
+                    <option value="por_pagar">Por Pagar (Se genera la cuenta como deuda)</option>
+                  </select>
                 </div>
               )}
 

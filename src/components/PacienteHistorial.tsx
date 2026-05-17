@@ -82,7 +82,7 @@ export function PacienteHistorial({ pacienteId, nombrePaciente }: PacienteHistor
       });
     });
 
-    abonos?.forEach((a: any) => {
+    /*abonos?.forEach((a: any) => {
       lista.push({
         id: a.id,
         tipo: 'abono',
@@ -93,7 +93,7 @@ export function PacienteHistorial({ pacienteId, nombrePaciente }: PacienteHistor
         estado: 'pagado',
         subtipo: 'abono',
       });
-    });
+    });*/
 
     // Ordenar por fecha descendente
     lista.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());

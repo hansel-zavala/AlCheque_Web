@@ -1,27 +1,80 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Building2, Save, Mail, Phone, MapPin, Loader2 } from 'lucide-react';
+import { createClient } from '@/utils/supabase/client';
+import { useCompanyStore } from '@/store/useCompanyStore';
 
 export default function PerfilCentroPage() {
+  const supabase = useMemo(() => createClient(), []);
+  const { activeCompany, setActiveCompany } = useCompanyStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
-    nombre: 'AlCheque Centro Educativo',
-    email: 'contacto@alcheque.hn',
-    telefono: '+504 9999-0000',
-    direccion: 'Tegucigalpa, Honduras',
+    nombre: '',
+    email: '',
+    telefono: '',
+    direccion: '',
     monedaPrincipal: 'HNL'
   });
 
+  useEffect(() => {
+    async function fetchCompany() {
+      if (!activeCompany) return;
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('companies')
+        .select('name, currency, email, phone, address')
+        .eq('id', activeCompany.id)
+        .single();
+      
+      if (data && !error) {
+        setFormData({
+          nombre: data.name || '',
+          email: data.email || '',
+          telefono: data.phone || '',
+          direccion: data.address || '',
+          monedaPrincipal: data.currency || 'HNL'
+        });
+      }
+      setLoading(false);
+    }
+    fetchCompany();
+  }, [activeCompany, supabase]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!activeCompany) return;
     setIsSubmitting(true);
-    // Simular guardado
-    setTimeout(() => {
-      setIsSubmitting(false);
+    
+    const { error } = await supabase
+      .from('companies')
+      .update({
+        name: formData.nombre,
+        email: formData.email,
+        phone: formData.telefono,
+        address: formData.direccion,
+        currency: formData.monedaPrincipal
+      })
+      .eq('id', activeCompany.id);
+
+    if (!error) {
+      // Update global state so sidebar reflects changes instantly
+      setActiveCompany({
+        ...activeCompany,
+        name: formData.nombre,
+        currency: formData.monedaPrincipal
+      });
       alert('Perfil del centro actualizado correctamente');
-    }, 1000);
+    } else {
+      alert('Error al guardar: ' + error.message);
+    }
+    setIsSubmitting(false);
   };
+
+  if (loading) {
+    return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-brand-500" size={32} /></div>;
+  }
 
   return (
     <div className="max-w-3xl space-y-6 animate-fade-in">
