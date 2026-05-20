@@ -28,4 +28,6 @@ export function getStoredTheme(): Theme {
 export function setStoredTheme(theme: Theme) {
   localStorage.setItem(STORAGE_KEY, theme);
   applyTheme(theme);
+  // Let interested components update instantly (charts, etc.)
+  window.dispatchEvent(new CustomEvent('alcheque-theme', { detail: theme }));
 }

@@ -49,6 +49,19 @@ export default function DashboardPage() {
   const [vencimientos, setVencimientos] = useState<CuentaVencimientoRow[]>([]);
   const [totalPorCobrar, setTotalPorCobrar] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    const read = () => setIsDark(document.documentElement.classList.contains('dark'));
+    read();
+    const onTheme = () => read();
+    window.addEventListener('alcheque-theme', onTheme as EventListener);
+    window.addEventListener('storage', onTheme);
+    return () => {
+      window.removeEventListener('alcheque-theme', onTheme as EventListener);
+      window.removeEventListener('storage', onTheme);
+    };
+  }, []);
 
   useEffect(() => {
     async function fetchDashboardData() {
@@ -219,13 +232,18 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4 mb-4">
-        <h2 className="text-2xl font-bold text-slate-800">Resumen Financiero</h2>
+        <h2 className={"text-2xl font-bold " + (isDark ? 'text-foreground' : 'text-slate-800')}>Resumen Financiero</h2>
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-slate-500">Filtrar por:</span>
+          <span className={"text-sm font-medium " + (isDark ? 'text-slate-400' : 'text-slate-500')}>Filtrar por:</span>
           <select 
             value={timeFilter} 
             onChange={(e) => setTimeFilter(e.target.value as 'semana' | 'mes' | 'año')}
-            className="px-4 py-2 bg-white border border-border rounded-xl text-sm font-medium focus:ring-2 focus:ring-brand-500/20 text-slate-800 shadow-sm"
+            className={
+              "px-4 py-2 border rounded-xl text-sm font-medium focus:ring-2 focus:ring-brand-500/20 shadow-sm " +
+              (isDark
+                ? 'bg-surface text-foreground border-border'
+                : 'bg-white text-slate-800 border-border')
+            }
           >
             <option value="semana">Esta Semana</option>
             <option value="mes">Este Mes</option>
@@ -237,21 +255,29 @@ export default function DashboardPage() {
       {/* Top Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-surface p-6 rounded-2xl border border-border shadow-sm transition-all hover:shadow-md border-b-4 border-b-green-500">
-          <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Ingresos ({timeFilter})</h3>
+          <h3 className={"text-sm font-bold uppercase tracking-wider " + (isDark ? 'text-slate-400' : 'text-slate-500')}>
+            Ingresos ({timeFilter})
+          </h3>
           <p className="text-3xl font-black mt-2 text-green-600 font-mono">{formatMoney(ingresosMes)}</p>
         </div>
         <div className="bg-surface p-6 rounded-2xl border border-border shadow-sm transition-all hover:shadow-md border-b-4 border-b-red-500">
-          <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Egresos ({timeFilter})</h3>
+          <h3 className={"text-sm font-bold uppercase tracking-wider " + (isDark ? 'text-slate-400' : 'text-slate-500')}>
+            Egresos ({timeFilter})
+          </h3>
           <p className="text-3xl font-black mt-2 text-red-600 font-mono">{formatMoney(egresosMes)}</p>
         </div>
         <div className="bg-surface p-6 rounded-2xl border border-border shadow-sm transition-all hover:shadow-md border-b-4 border-b-brand-500">
-          <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Saldo Neto</h3>
+          <h3 className={"text-sm font-bold uppercase tracking-wider " + (isDark ? 'text-slate-400' : 'text-slate-500')}>
+            Saldo Neto
+          </h3>
           <p className={`text-3xl font-black mt-2 font-mono ${saldoNeto >= 0 ? 'text-brand-600' : 'text-red-600'}`}>
             {formatMoney(saldoNeto)}
           </p>
         </div>
         <div className="bg-surface p-6 rounded-2xl border border-border shadow-sm transition-all hover:shadow-md border-b-4 border-b-orange-500">
-          <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Total por Cobrar</h3>
+          <h3 className={"text-sm font-bold uppercase tracking-wider " + (isDark ? 'text-slate-400' : 'text-slate-500')}>
+            Total por Cobrar
+          </h3>
           <p className="text-3xl font-black mt-2 text-orange-600 font-mono">{formatMoney(totalPorCobrar)}</p>
         </div>
       </div>
@@ -261,19 +287,38 @@ export default function DashboardPage() {
         
         {/* Chart */}
         <div className="lg:col-span-2 bg-surface p-6 rounded-xl border border-border shadow-sm flex flex-col min-h-[400px]">
-          <h3 className="text-lg font-bold text-slate-800 mb-6">Flujo de Caja (Últimos 6 meses)</h3>
+          <h3 className={"text-lg font-bold mb-6 " + (isDark ? 'text-foreground' : 'text-slate-800')}>
+            Flujo de Caja (Últimos 6 meses)
+          </h3>
           <div className="flex-1 w-full relative">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748B'}} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748B'}} tickFormatter={(val) => {
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  vertical={false}
+                  stroke={isDark ? 'rgba(148,163,184,0.22)' : '#E2E8F0'}
+                />
+                <XAxis
+                  dataKey="name"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: isDark ? '#94A3B8' : '#64748B' }}
+                  dy={10}
+                />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: isDark ? '#94A3B8' : '#64748B' }} tickFormatter={(val) => {
                   const symbol = activeCompany?.currency === 'USD' ? '$' : activeCompany?.currency === 'EUR' ? '€' : 'L';
                   return `${symbol}${val / 1000}k`;
                 }} />
                   <Tooltip 
-                    cursor={{fill: '#F1F5F9'}} 
-                    contentStyle={{borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'}}
+                    cursor={{ fill: isDark ? 'rgba(255,255,255,0.06)' : '#F1F5F9' }} 
+                    contentStyle={{
+                      borderRadius: '12px',
+                      border: `1px solid ${isDark ? 'rgba(148,163,184,0.25)' : '#E2E8F0'}`,
+                      backgroundColor: isDark ? '#0f172a' : '#ffffff',
+                      color: isDark ? '#e5e7eb' : '#0f172a',
+                      boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.2)'
+                    }}
+                    labelStyle={{ color: isDark ? '#e5e7eb' : '#0f172a' }}
                     formatter={(value: unknown) => [formatMoney(Number(value)), '']} 
                   />
                 <Bar dataKey="ingresos" fill="#10B981" radius={[4, 4, 0, 0]} name="Ingresos" maxBarSize={50} />
@@ -286,15 +331,25 @@ export default function DashboardPage() {
         {/* Recent Transactions List */}
         <div className="bg-surface p-6 rounded-xl border border-border shadow-sm flex flex-col">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-bold text-slate-800">Transacciones Recientes</h3>
+            <h3 className={"text-lg font-bold " + (isDark ? 'text-foreground' : 'text-slate-800')}>Transacciones Recientes</h3>
           </div>
           
           <div className="space-y-3 flex-1 overflow-y-auto">
             {recentTrans.map(t => (
-              <div key={t.id} className="flex justify-between items-center p-3 hover:bg-slate-50 rounded-xl transition-colors border border-slate-100/50">
+              <div
+                key={t.id}
+                className={
+                  "flex justify-between items-center p-3 rounded-xl transition-colors border " +
+                  (isDark
+                    ? 'border-white/10 hover:bg-white/5'
+                    : 'border-slate-100/50 hover:bg-slate-50')
+                }
+              >
                 <div className="overflow-hidden pr-3">
-                  <p className="text-sm font-medium text-slate-800 truncate" title={t.descripcion}>{t.descripcion}</p>
-                  <p className="text-xs text-slate-500 mt-0.5 truncate">
+                  <p className={"text-sm font-medium truncate " + (isDark ? 'text-foreground' : 'text-slate-800')} title={t.descripcion}>
+                    {t.descripcion}
+                  </p>
+                  <p className={"text-xs mt-0.5 truncate " + (isDark ? 'text-slate-400' : 'text-slate-500')}>
                     {parseDateOnly(t.fecha).toLocaleDateString('es-HN', { month: 'short', day: 'numeric' })} • {t.categorias?.nombre || 'Sin categoría'}
                   </p>
                 </div>
@@ -305,8 +360,8 @@ export default function DashboardPage() {
             ))}
 
             {recentTrans.length === 0 && (
-              <div className="h-full flex flex-col items-center justify-center text-center p-6 border-2 border-dashed border-slate-100 rounded-xl">
-                <p className="text-sm text-slate-500">No hay transacciones registradas.</p>
+              <div className={"h-full flex flex-col items-center justify-center text-center p-6 border-2 border-dashed rounded-xl " + (isDark ? 'border-white/15' : 'border-slate-100')}>
+                <p className={"text-sm " + (isDark ? 'text-slate-400' : 'text-slate-500')}>No hay transacciones registradas.</p>
                 <Link href="/transacciones" className="text-brand-600 text-sm font-medium mt-2 hover:underline">Crear primera</Link>
               </div>
             )}
@@ -314,7 +369,12 @@ export default function DashboardPage() {
           
           <Link 
             href="/transacciones" 
-            className="mt-6 flex items-center justify-center gap-2 w-full py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 text-sm font-medium rounded-lg transition-colors border border-slate-200"
+            className={
+              "mt-6 flex items-center justify-center gap-2 w-full py-2.5 text-sm font-medium rounded-lg transition-colors border " +
+              (isDark
+                ? 'bg-white/5 hover:bg-white/8 text-foreground border-white/10'
+                : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200')
+            }
           >
             <span>Ver todas las transacciones</span>
             <ArrowRight size={16} />
@@ -324,22 +384,32 @@ export default function DashboardPage() {
 
       {/* Vencimientos Widget */}
       <div className="grid grid-cols-1 gap-6">
-        <div className="bg-surface p-6 rounded-xl border border-red-100 shadow-sm">
-          <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+        <div className={"bg-surface p-6 rounded-xl shadow-sm border " + (isDark ? 'border-white/10' : 'border-red-100')}>
+          <h3 className={"text-lg font-bold mb-4 flex items-center gap-2 " + (isDark ? 'text-foreground' : 'text-slate-800')}>
             <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
             Alertas de Cobro (Próximos 7 días)
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
             {vencimientos.length === 0 ? (
-              <p className="text-sm text-slate-500 col-span-full">No hay cuentas por vencer en los próximos 7 días.</p>
+              <p className={"text-sm col-span-full " + (isDark ? 'text-slate-400' : 'text-slate-500')}>
+                No hay cuentas por vencer en los próximos 7 días.
+              </p>
             ) : (
               vencimientos.map(v => {
                 const saldo = parseFloat(v.monto_total) - parseFloat(v.monto_pagado);
                 const isVencida = v.fecha_vencimiento < formatLocalDateInputValue();
                 return (
-                  <div key={v.id} className={`p-4 rounded-xl border ${isVencida ? 'bg-red-50 border-red-200' : 'bg-orange-50 border-orange-200'}`}>
+                  <div
+                    key={v.id}
+                    className={
+                      'p-4 rounded-xl border ' +
+                      (isDark
+                        ? (isVencida ? 'bg-red-950/30 border-red-900/35' : 'bg-orange-950/25 border-orange-900/30')
+                        : (isVencida ? 'bg-red-50 border-red-200' : 'bg-orange-50 border-orange-200'))
+                    }
+                  >
                     <p
-                      className="font-semibold text-slate-800 truncate"
+                      className={"font-semibold truncate " + (isDark ? 'text-foreground' : 'text-slate-800')}
                       title={v.pacientes?.nombre_completo ?? undefined}
                     >
                       {v.pacientes?.nombre_completo ?? 'Sin nombre'}
@@ -347,7 +417,9 @@ export default function DashboardPage() {
                     <p className={`text-xs font-medium mt-1 ${isVencida ? 'text-red-600' : 'text-orange-600'}`}>
                       {isVencida ? 'Vencida el' : 'Vence el'} {parseDateOnly(v.fecha_vencimiento).toLocaleDateString('es-HN')}
                     </p>
-                    <p className="font-mono font-bold mt-2 text-slate-800">{formatMoney(saldo)}</p>
+                    <p className={"font-mono font-bold mt-2 " + (isDark ? 'text-foreground' : 'text-slate-800')}>
+                      {formatMoney(saldo)}
+                    </p>
                     <Link href="/cuentas" className="text-xs font-medium text-brand-600 mt-3 inline-block hover:underline">Gestionar Cobro &rarr;</Link>
                   </div>
                 )

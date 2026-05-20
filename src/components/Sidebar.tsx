@@ -78,14 +78,14 @@ export function Sidebar() {
       </nav>
 
       <div className="p-4">
-        <div className="bg-white/60 backdrop-blur-md rounded-xl p-3 border border-[#d2d2d7]/40 flex flex-col gap-3 shadow-apple">
+        <div className="bg-white/60 dark:bg-slate-800/40 backdrop-blur-md rounded-xl p-3 border border-[#d2d2d7]/40 dark:border-slate-700/50 flex flex-col gap-3 shadow-apple">
           <div>
             <p className="text-[11px] font-semibold text-[#86868b] uppercase tracking-wider mb-0.5">Usuario</p>
             <p className="text-sm font-medium text-[#1d1d1f]">Administrador</p>
           </div>
           <button 
             onClick={() => logout()}
-            className="flex items-center justify-center space-x-2 w-full py-1.5 bg-[#f5f5f7] hover:bg-[#e8e8ed] text-[#1d1d1f] rounded-lg transition-colors text-xs font-medium"
+            className="flex items-center justify-center space-x-2 w-full py-1.5 bg-[#f5f5f7] dark:bg-slate-800 hover:bg-[#e8e8ed] dark:hover:bg-slate-700/80 text-[#1d1d1f] rounded-lg transition-colors text-xs font-medium"
           >
             <LogOut size={14} />
             <span>Cerrar Sesión</span>

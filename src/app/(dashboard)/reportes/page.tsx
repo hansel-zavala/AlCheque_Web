@@ -94,10 +94,10 @@ export default function ReportesPage() {
 
   // Cálculos de Método de Pago (solo ingresos efectivos para arqueo)
   const metodos = [
-    { id: 'efectivo', nombre: 'Efectivo', icon: BanknoteIcon, color: 'text-emerald-600', bg: 'bg-emerald-100' },
-    { id: 'transferencia', nombre: 'Transferencia', icon: Landmark, color: 'text-blue-600', bg: 'bg-blue-100' },
-    { id: 'tarjeta de credito/debito', nombre: 'Tarjeta', icon: CreditCard, color: 'text-purple-600', bg: 'bg-purple-100' },
-    { id: 'cheque', nombre: 'Cheque', icon: Receipt, color: 'text-amber-600', bg: 'bg-amber-100' },
+    { id: 'efectivo', nombre: 'Efectivo', icon: BanknoteIcon, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-100 dark:bg-emerald-950/30' },
+    { id: 'transferencia', nombre: 'Transferencia', icon: Landmark, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-100 dark:bg-blue-950/30' },
+    { id: 'tarjeta de credito/debito', nombre: 'Tarjeta', icon: CreditCard, color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-100 dark:bg-purple-950/30' },
+    { id: 'cheque', nombre: 'Cheque', icon: Receipt, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-100 dark:bg-amber-950/30' },
   ];
 
   const transaccionesPorMetodoIngreso = (metodoId: string) => 
@@ -274,7 +274,7 @@ export default function ReportesPage() {
           </div>
           <button 
             onClick={handleExportPDF}
-            className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
           >
             <Download size={16} /> Exportar
           </button>
@@ -290,7 +290,7 @@ export default function ReportesPage() {
             <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
               <div className="flex justify-between items-start mb-2">
                 <p className="text-sm font-medium text-slate-500">Total Ingresos</p>
-                <div className="bg-emerald-100 p-2 rounded-lg"><ArrowUpRight size={18} className="text-emerald-600"/></div>
+                <div className="bg-emerald-100 dark:bg-emerald-950/40 p-2 rounded-lg"><ArrowUpRight size={18} className="text-emerald-600 dark:text-emerald-400"/></div>
               </div>
               <h3 className="text-2xl font-bold text-slate-800 font-mono">L {totalIngresos.toFixed(2)}</h3>
             </div>
@@ -298,17 +298,31 @@ export default function ReportesPage() {
             <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
               <div className="flex justify-between items-start mb-2">
                 <p className="text-sm font-medium text-slate-500">Total Egresos</p>
-                <div className="bg-rose-100 p-2 rounded-lg"><ArrowDownRight size={18} className="text-rose-600"/></div>
+                <div className="bg-rose-100 dark:bg-rose-950/40 p-2 rounded-lg"><ArrowDownRight size={18} className="text-rose-600 dark:text-rose-400"/></div>
               </div>
               <h3 className="text-2xl font-bold text-slate-800 font-mono">L {totalEgresos.toFixed(2)}</h3>
             </div>
             
-            <div className="bg-brand-50 p-5 rounded-2xl border border-brand-200 shadow-sm flex flex-col justify-between">
+            <div className={`p-5 rounded-2xl border shadow-sm flex flex-col justify-between transition-colors duration-200 ${
+              flujoNeto >= 0
+                ? 'bg-brand-50 border-brand-200 dark:bg-emerald-950/20 dark:border-emerald-900/30'
+                : 'bg-rose-50 border-rose-200 dark:bg-rose-950/20 dark:border-rose-900/30'
+            }`}>
               <div className="flex justify-between items-start mb-2">
-                <p className="text-sm font-medium text-brand-700">Flujo Neto</p>
-                <div className="bg-brand-200 p-2 rounded-lg"><TrendingUp size={18} className="text-brand-700"/></div>
+                <p className={`text-sm font-medium ${
+                  flujoNeto >= 0 ? 'text-brand-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'
+                }`}>Flujo Neto</p>
+                <div className={`p-2 rounded-lg ${
+                  flujoNeto >= 0 ? 'bg-brand-200 dark:bg-emerald-900/40' : 'bg-rose-200 dark:bg-rose-900/40'
+                }`}>
+                  <TrendingUp size={18} className={
+                    flujoNeto >= 0 ? 'text-brand-700 dark:text-emerald-300' : 'text-rose-700 dark:text-rose-300'
+                  }/>
+                </div>
               </div>
-              <h3 className={`text-2xl font-bold font-mono ${flujoNeto >= 0 ? 'text-brand-700' : 'text-rose-600'}`}>
+              <h3 className={`text-2xl font-bold font-mono ${
+                flujoNeto >= 0 ? 'text-brand-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+              }`}>
                 L {flujoNeto.toFixed(2)}
               </h3>
             </div>
@@ -316,7 +330,7 @@ export default function ReportesPage() {
             <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
               <div className="flex justify-between items-start mb-2">
                 <p className="text-sm font-medium text-slate-500">Por Cobrar (Proyección)</p>
-                <div className="bg-orange-100 p-2 rounded-lg"><DollarSign size={18} className="text-orange-600"/></div>
+                <div className="bg-orange-100 dark:bg-orange-950/40 p-2 rounded-lg"><DollarSign size={18} className="text-orange-600 dark:text-orange-400"/></div>
               </div>
               <h3 className="text-2xl font-bold text-slate-800 font-mono">L {proyeccionCobrar.toFixed(2)}</h3>
             </div>
@@ -337,15 +351,15 @@ export default function ReportesPage() {
                     onClick={() => setMetodoSeleccionadoIngreso(isSelected ? 'todos' : m.id)}
                     className={`cursor-pointer p-4 rounded-xl border transition-all ${
                       isSelected 
-                        ? 'border-brand-500 ring-1 ring-brand-500 shadow-md bg-brand-50' 
-                        : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'
+                        ? 'border-brand-500 ring-1 ring-brand-500 shadow-md bg-brand-50 dark:bg-brand-950/30 dark:border-brand-500/50' 
+                        : 'border-slate-200 bg-white dark:bg-slate-900/40 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-sm'
                     }`}
                   >
                     <div className="flex items-center gap-3 mb-2">
                       <div className={`p-1.5 rounded-md ${m.bg}`}><m.icon size={16} className={m.color} /></div>
-                      <p className={`text-sm font-semibold ${isSelected ? 'text-brand-800' : 'text-slate-700'}`}>{m.nombre}</p>
+                      <p className={`text-sm font-semibold ${isSelected ? 'text-brand-800 dark:text-brand-300' : 'text-slate-700 dark:text-slate-300'}`}>{m.nombre}</p>
                     </div>
-                    <p className={`text-xl font-bold font-mono ${isSelected ? 'text-brand-700' : 'text-slate-800'}`}>L {total.toFixed(2)}</p>
+                    <p className={`text-xl font-bold font-mono ${isSelected ? 'text-brand-700 dark:text-brand-400' : 'text-slate-800 dark:text-slate-100'}`}>L {total.toFixed(2)}</p>
                   </div>
                 );
               })}
@@ -356,9 +370,9 @@ export default function ReportesPage() {
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden animate-fade-in">
                 <div className="px-4 py-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
                   <h3 className="font-semibold text-slate-700 text-sm flex items-center gap-2">
-                    Detalle de Ingresos: <span className="text-brand-600">{metodos.find(m => m.id === metodoSeleccionadoIngreso)?.nombre}</span>
+                    Detalle de Ingresos: <span className="text-brand-600 dark:text-brand-400">{metodos.find(m => m.id === metodoSeleccionadoIngreso)?.nombre}</span>
                   </h3>
-                  <button onClick={() => setMetodoSeleccionadoIngreso('todos')} className="text-xs text-slate-500 hover:text-slate-800 hover:underline font-medium px-2 py-1">Cerrar Detalle</button>
+                  <button onClick={() => setMetodoSeleccionadoIngreso('todos')} className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:underline font-medium px-2 py-1">Cerrar Detalle</button>
                 </div>
                 <div className="overflow-x-auto max-h-80 custom-scrollbar">
                   <table className="w-full text-left border-collapse">
@@ -381,7 +395,7 @@ export default function ReportesPage() {
                             <td className="py-2.5 px-4 text-slate-500">
                               <span className="bg-slate-100 px-2 py-0.5 rounded text-xs">{t.categorias?.nombre || 'General'}</span>
                             </td>
-                            <td className="py-2.5 px-4 text-right font-mono font-medium text-emerald-600">
+                            <td className="py-2.5 px-4 text-right font-mono font-medium text-emerald-600 dark:text-emerald-400">
                               + L {Number(t.monto_hnl).toFixed(2)}
                             </td>
                           </tr>
@@ -409,15 +423,15 @@ export default function ReportesPage() {
                     onClick={() => setMetodoSeleccionadoEgreso(isSelected ? 'todos' : m.id)}
                     className={`cursor-pointer p-4 rounded-xl border transition-all ${
                       isSelected 
-                        ? 'border-rose-500 ring-1 ring-rose-500 shadow-md bg-rose-50' 
-                        : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'
+                        ? 'border-rose-500 ring-1 ring-rose-500 shadow-md bg-rose-50 dark:bg-rose-950/30 dark:border-rose-500/50' 
+                        : 'border-slate-200 bg-white dark:bg-slate-900/40 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-sm'
                     }`}
                   >
                     <div className="flex items-center gap-3 mb-2">
                       <div className={`p-1.5 rounded-md ${m.bg}`}><m.icon size={16} className={m.color} /></div>
-                      <p className={`text-sm font-semibold ${isSelected ? 'text-rose-800' : 'text-slate-700'}`}>{m.nombre}</p>
+                      <p className={`text-sm font-semibold ${isSelected ? 'text-rose-800 dark:text-rose-300' : 'text-slate-700 dark:text-slate-300'}`}>{m.nombre}</p>
                     </div>
-                    <p className={`text-xl font-bold font-mono ${isSelected ? 'text-rose-700' : 'text-slate-800'}`}>L {total.toFixed(2)}</p>
+                    <p className={`text-xl font-bold font-mono ${isSelected ? 'text-rose-700 dark:text-rose-400' : 'text-slate-800 dark:text-slate-100'}`}>L {total.toFixed(2)}</p>
                   </div>
                 );
               })}
@@ -428,9 +442,9 @@ export default function ReportesPage() {
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden animate-fade-in">
                 <div className="px-4 py-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
                   <h3 className="font-semibold text-slate-700 text-sm flex items-center gap-2">
-                    Detalle de Egresos: <span className="text-rose-600">{metodos.find(m => m.id === metodoSeleccionadoEgreso)?.nombre}</span>
+                    Detalle de Egresos: <span className="text-rose-600 dark:text-rose-400">{metodos.find(m => m.id === metodoSeleccionadoEgreso)?.nombre}</span>
                   </h3>
-                  <button onClick={() => setMetodoSeleccionadoEgreso('todos')} className="text-xs text-slate-500 hover:text-slate-800 hover:underline font-medium px-2 py-1">Cerrar Detalle</button>
+                  <button onClick={() => setMetodoSeleccionadoEgreso('todos')} className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:underline font-medium px-2 py-1">Cerrar Detalle</button>
                 </div>
                 <div className="overflow-x-auto max-h-80 custom-scrollbar">
                   <table className="w-full text-left border-collapse">
@@ -453,7 +467,7 @@ export default function ReportesPage() {
                             <td className="py-2.5 px-4 text-slate-500">
                               <span className="bg-slate-100 px-2 py-0.5 rounded text-xs">{t.categorias?.nombre || 'General'}</span>
                             </td>
-                            <td className="py-2.5 px-4 text-right font-mono font-medium text-rose-600">
+                            <td className="py-2.5 px-4 text-right font-mono font-medium text-rose-600 dark:text-rose-400">
                               - L {Number(t.monto_hnl).toFixed(2)}
                             </td>
                           </tr>
