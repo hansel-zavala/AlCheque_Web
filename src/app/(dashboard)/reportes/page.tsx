@@ -46,7 +46,8 @@ export default function ReportesPage() {
   const [cuentasPendientes, setCuentasPendientes] = useState<Cuenta[]>([]);
 
   // Tab seleccionada para el detalle de métodos de pago
-  const [metodoSeleccionado, setMetodoSeleccionado] = useState<string>('todos');
+  const [metodoSeleccionadoIngreso, setMetodoSeleccionadoIngreso] = useState<string>('todos');
+  const [metodoSeleccionadoEgreso, setMetodoSeleccionadoEgreso] = useState<string>('todos');
 
   const fetchData = useCallback(async () => {
     if (!activeCompany) return;
@@ -99,11 +100,17 @@ export default function ReportesPage() {
     { id: 'cheque', nombre: 'Cheque', icon: Receipt, color: 'text-amber-600', bg: 'bg-amber-100' },
   ];
 
-  const transaccionesPorMetodo = (metodoId: string) => 
+  const transaccionesPorMetodoIngreso = (metodoId: string) => 
     ingresos.filter(t => (t.metodo_pago?.toLowerCase() || 'efectivo') === metodoId);
 
-  const totalPorMetodo = (metodoId: string) => 
-    transaccionesPorMetodo(metodoId).reduce((acc, t) => acc + Number(t.monto_hnl), 0);
+  const totalPorMetodoIngreso = (metodoId: string) => 
+    transaccionesPorMetodoIngreso(metodoId).reduce((acc, t) => acc + Number(t.monto_hnl), 0);
+
+  const transaccionesPorMetodoEgreso = (metodoId: string) => 
+    egresos.filter(t => (t.metodo_pago?.toLowerCase() || 'efectivo') === metodoId);
+
+  const totalPorMetodoEgreso = (metodoId: string) => 
+    transaccionesPorMetodoEgreso(metodoId).reduce((acc, t) => acc + Number(t.monto_hnl), 0);
 
   // Categorías de Ingresos y Egresos
   const agruparCategorias = (txs: Transaccion[]) => {
@@ -149,7 +156,7 @@ export default function ReportesPage() {
       styles: { fontSize: 10 }
     });
 
-    // Desglose por Método
+    // Desglose por Método (Ingresos)
     const finalY1 = (doc as any).lastAutoTable.finalY || 50;
     doc.setFontSize(14);
     doc.text('Desglose por Método de Pago (Ingresos)', 14, finalY1 + 15);
@@ -157,9 +164,23 @@ export default function ReportesPage() {
     autoTable(doc, {
       startY: finalY1 + 20,
       head: [['Método', 'Total Recaudado']],
-      body: metodos.map(m => [m.nombre, `L ${totalPorMetodo(m.id).toFixed(2)}`]),
+      body: metodos.map(m => [m.nombre, `L ${totalPorMetodoIngreso(m.id).toFixed(2)}`]),
       theme: 'grid',
       headStyles: { fillColor: [59, 130, 246] }, // Blue 500
+      styles: { fontSize: 10 }
+    });
+
+    // Desglose por Método (Egresos)
+    const finalY1b = (doc as any).lastAutoTable.finalY || 50;
+    doc.setFontSize(14);
+    doc.text('Desglose por Método de Pago (Egresos)', 14, finalY1b + 15);
+    
+    autoTable(doc, {
+      startY: finalY1b + 20,
+      head: [['Método', 'Total Pagado']],
+      body: metodos.map(m => [m.nombre, `L ${totalPorMetodoEgreso(m.id).toFixed(2)}`]),
+      theme: 'grid',
+      headStyles: { fillColor: [244, 63, 94] }, // Rose 500
       styles: { fontSize: 10 }
     });
 
@@ -297,19 +318,19 @@ export default function ReportesPage() {
             </div>
           </div>
 
-          {/* B. DESGLOSE POR MÉTODO DE PAGO */}
-          <div>
+          {/* B. DESGLOSE POR MÉTODO DE PAGO (INGRESOS) */}
+          <div className="mb-8">
             <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
               <Wallet size={20} className="text-slate-400" /> Arqueo de Ingresos por Método de Pago
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
               {metodos.map(m => {
-                const total = totalPorMetodo(m.id);
-                const isSelected = metodoSeleccionado === m.id;
+                const total = totalPorMetodoIngreso(m.id);
+                const isSelected = metodoSeleccionadoIngreso === m.id;
                 return (
                   <div 
                     key={m.id}
-                    onClick={() => setMetodoSeleccionado(isSelected ? 'todos' : m.id)}
+                    onClick={() => setMetodoSeleccionadoIngreso(isSelected ? 'todos' : m.id)}
                     className={`cursor-pointer p-4 rounded-xl border transition-all ${
                       isSelected 
                         ? 'border-brand-500 ring-1 ring-brand-500 shadow-md bg-brand-50' 
@@ -326,14 +347,14 @@ export default function ReportesPage() {
               })}
             </div>
 
-            {/* TABLA DE DETALLE DE MÉTODO */}
-            {metodoSeleccionado !== 'todos' && (
+            {/* TABLA DE DETALLE DE MÉTODO (INGRESOS) */}
+            {metodoSeleccionadoIngreso !== 'todos' && (
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden animate-fade-in">
                 <div className="px-4 py-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
                   <h3 className="font-semibold text-slate-700 text-sm flex items-center gap-2">
-                    Detalle de Ingresos: <span className="text-brand-600">{metodos.find(m => m.id === metodoSeleccionado)?.nombre}</span>
+                    Detalle de Ingresos: <span className="text-brand-600">{metodos.find(m => m.id === metodoSeleccionadoIngreso)?.nombre}</span>
                   </h3>
-                  <button onClick={() => setMetodoSeleccionado('todos')} className="text-xs text-slate-500 hover:text-slate-800 hover:underline font-medium px-2 py-1">Cerrar Detalle</button>
+                  <button onClick={() => setMetodoSeleccionadoIngreso('todos')} className="text-xs text-slate-500 hover:text-slate-800 hover:underline font-medium px-2 py-1">Cerrar Detalle</button>
                 </div>
                 <div className="overflow-x-auto max-h-80 custom-scrollbar">
                   <table className="w-full text-left border-collapse">
@@ -346,10 +367,10 @@ export default function ReportesPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-sm">
-                      {transaccionesPorMetodo(metodoSeleccionado).length === 0 ? (
+                      {transaccionesPorMetodoIngreso(metodoSeleccionadoIngreso).length === 0 ? (
                         <tr><td colSpan={4} className="py-8 text-center text-slate-400">No hay transacciones registradas con este método.</td></tr>
                       ) : (
-                        transaccionesPorMetodo(metodoSeleccionado).map(t => (
+                        transaccionesPorMetodoIngreso(metodoSeleccionadoIngreso).map(t => (
                           <tr key={t.id} className="hover:bg-slate-50">
                             <td className="py-2.5 px-4 text-slate-600">{new Date(t.fecha + 'T00:00:00').toLocaleDateString()}</td>
                             <td className="py-2.5 px-4 font-medium text-slate-800">{t.descripcion}</td>
@@ -358,6 +379,78 @@ export default function ReportesPage() {
                             </td>
                             <td className="py-2.5 px-4 text-right font-mono font-medium text-emerald-600">
                               + L {Number(t.monto_hnl).toFixed(2)}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* C. DESGLOSE POR MÉTODO DE PAGO (EGRESOS) */}
+          <div className="mb-4">
+            <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+              <Receipt size={20} className="text-slate-400" /> Arqueo de Egresos por Método de Pago
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+              {metodos.map(m => {
+                const total = totalPorMetodoEgreso(m.id);
+                const isSelected = metodoSeleccionadoEgreso === m.id;
+                return (
+                  <div 
+                    key={m.id}
+                    onClick={() => setMetodoSeleccionadoEgreso(isSelected ? 'todos' : m.id)}
+                    className={`cursor-pointer p-4 rounded-xl border transition-all ${
+                      isSelected 
+                        ? 'border-rose-500 ring-1 ring-rose-500 shadow-md bg-rose-50' 
+                        : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className={`p-1.5 rounded-md ${m.bg}`}><m.icon size={16} className={m.color} /></div>
+                      <p className={`text-sm font-semibold ${isSelected ? 'text-rose-800' : 'text-slate-700'}`}>{m.nombre}</p>
+                    </div>
+                    <p className={`text-xl font-bold font-mono ${isSelected ? 'text-rose-700' : 'text-slate-800'}`}>L {total.toFixed(2)}</p>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* TABLA DE DETALLE DE MÉTODO (EGRESOS) */}
+            {metodoSeleccionadoEgreso !== 'todos' && (
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden animate-fade-in">
+                <div className="px-4 py-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                  <h3 className="font-semibold text-slate-700 text-sm flex items-center gap-2">
+                    Detalle de Egresos: <span className="text-rose-600">{metodos.find(m => m.id === metodoSeleccionadoEgreso)?.nombre}</span>
+                  </h3>
+                  <button onClick={() => setMetodoSeleccionadoEgreso('todos')} className="text-xs text-slate-500 hover:text-slate-800 hover:underline font-medium px-2 py-1">Cerrar Detalle</button>
+                </div>
+                <div className="overflow-x-auto max-h-80 custom-scrollbar">
+                  <table className="w-full text-left border-collapse">
+                    <thead className="bg-white sticky top-0 border-b border-slate-100 shadow-sm z-10">
+                      <tr>
+                        <th className="py-2.5 px-4 text-xs font-semibold text-slate-500">Fecha</th>
+                        <th className="py-2.5 px-4 text-xs font-semibold text-slate-500">Descripción</th>
+                        <th className="py-2.5 px-4 text-xs font-semibold text-slate-500">Categoría</th>
+                        <th className="py-2.5 px-4 text-xs font-semibold text-slate-500 text-right">Monto</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-sm">
+                      {transaccionesPorMetodoEgreso(metodoSeleccionadoEgreso).length === 0 ? (
+                        <tr><td colSpan={4} className="py-8 text-center text-slate-400">No hay transacciones registradas con este método.</td></tr>
+                      ) : (
+                        transaccionesPorMetodoEgreso(metodoSeleccionadoEgreso).map(t => (
+                          <tr key={t.id} className="hover:bg-slate-50">
+                            <td className="py-2.5 px-4 text-slate-600">{new Date(t.fecha + 'T00:00:00').toLocaleDateString()}</td>
+                            <td className="py-2.5 px-4 font-medium text-slate-800">{t.descripcion}</td>
+                            <td className="py-2.5 px-4 text-slate-500">
+                              <span className="bg-slate-100 px-2 py-0.5 rounded text-xs">{t.categorias?.nombre || 'General'}</span>
+                            </td>
+                            <td className="py-2.5 px-4 text-right font-mono font-medium text-rose-600">
+                              - L {Number(t.monto_hnl).toFixed(2)}
                             </td>
                           </tr>
                         ))
