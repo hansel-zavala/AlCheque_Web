@@ -2,12 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Building2, Tags, BriefcaseMedical, TriangleAlert } from 'lucide-react';
+import { Building2, Tags, BriefcaseMedical, TriangleAlert, MoonStar } from 'lucide-react';
 
 const navItems = [
   { name: 'Perfil del Centro', href: '/configuracion/perfil', icon: Building2 },
   { name: 'Categorías', href: '/configuracion/categorias', icon: Tags },
   { name: 'Servicios', href: '/configuracion/servicios', icon: BriefcaseMedical },
+  { name: 'Apariencia', href: '/configuracion/apariencia', icon: MoonStar },
   { name: 'Opciones Avanzadas', href: '/configuracion/avanzado', icon: TriangleAlert },
 ];
 

@@ -21,7 +21,8 @@ interface PacienteHistorialProps {
   nombrePaciente: string;
 }
 
-export function PacienteHistorial({ pacienteId, nombrePaciente }: PacienteHistorialProps) {
+export function PacienteHistorial({ pacienteId, nombrePaciente: _nombrePaciente }: PacienteHistorialProps) {
+  void _nombrePaciente;
   const supabase = useMemo(() => createClient(), []);
   const [items, setItems] = useState<HistorialItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,11 +46,7 @@ export function PacienteHistorial({ pacienteId, nombrePaciente }: PacienteHistor
       .order('fecha_vencimiento', { ascending: false });
 
     // 3. Abonos del paciente (a través de cuentas)
-    const { data: abonos } = await supabase
-      .from('abonos')
-      .select('id, fecha, monto, metodo_pago, cuenta_id, cuentas_por_cobrar!inner(paciente_id)')
-      .eq('cuentas_por_cobrar.paciente_id', pacienteId)
-      .order('fecha', { ascending: false });
+    // Actualmente no se muestra en UI; evitamos la consulta por ahora.
 
     const lista: HistorialItem[] = [];
 
@@ -66,7 +63,16 @@ export function PacienteHistorial({ pacienteId, nombrePaciente }: PacienteHistor
       });
     });
 
-    cuentas?.forEach((c: any) => {
+    type CuentaRow = {
+      id: string;
+      fecha_vencimiento: string;
+      monto_total: string;
+      estado: string;
+      notas: string | null;
+      servicios: { nombre: string | null } | null;
+    };
+
+    (cuentas as unknown as CuentaRow[] | null | undefined)?.forEach((c) => {
       const today = new Date().toISOString().split('T')[0];
       let estadoReal = c.estado;
       if (c.estado !== 'pagada' && c.fecha_vencimiento < today) estadoReal = 'vencida';

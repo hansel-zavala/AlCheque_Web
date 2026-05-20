@@ -157,7 +157,8 @@ export default function ReportesPage() {
     });
 
     // Desglose por Método (Ingresos)
-    const finalY1 = (doc as any).lastAutoTable.finalY || 50;
+    const finalY1 =
+      (doc as unknown as { lastAutoTable?: { finalY?: number } }).lastAutoTable?.finalY ?? 50;
     doc.setFontSize(14);
     doc.text('Desglose por Método de Pago (Ingresos)', 14, finalY1 + 15);
     
@@ -171,7 +172,8 @@ export default function ReportesPage() {
     });
 
     // Desglose por Método (Egresos)
-    const finalY1b = (doc as any).lastAutoTable.finalY || 50;
+    const finalY1b =
+      (doc as unknown as { lastAutoTable?: { finalY?: number } }).lastAutoTable?.finalY ?? 50;
     doc.setFontSize(14);
     doc.text('Desglose por Método de Pago (Egresos)', 14, finalY1b + 15);
     
@@ -185,7 +187,8 @@ export default function ReportesPage() {
     });
 
     // Categorías de Ingreso
-    const finalY2 = (doc as any).lastAutoTable.finalY || 50;
+    const finalY2 =
+      (doc as unknown as { lastAutoTable?: { finalY?: number } }).lastAutoTable?.finalY ?? 50;
     doc.setFontSize(14);
     doc.text('Ingresos por Categoría', 14, finalY2 + 15);
     
@@ -219,7 +222,8 @@ export default function ReportesPage() {
 
     // Si hay egresos, agregar tabla de egresos
     if (egresos.length > 0) {
-      const finalY3 = (doc as any).lastAutoTable.finalY || 20;
+      const finalY3 =
+        (doc as unknown as { lastAutoTable?: { finalY?: number } }).lastAutoTable?.finalY ?? 20;
       doc.setFontSize(14);
       doc.text('Historial Detallado de Egresos', 14, finalY3 + 15);
 
@@ -526,7 +530,7 @@ export default function ReportesPage() {
 }
 
 // Icono faltante exportado internamente
-function BanknoteIcon(props: any) {
+function BanknoteIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
       {...props}

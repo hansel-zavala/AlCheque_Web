@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { TriangleAlert, Trash2, Loader2, ShieldAlert } from 'lucide-react';
+import { Trash2, Loader2, ShieldAlert } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { useCompanyStore } from '@/store/useCompanyStore';
 
@@ -10,7 +10,6 @@ export default function AvanzadoPage() {
   const { activeCompany } = useCompanyStore();
   const [loading, setLoading] = useState(false);
   const [confirmText, setConfirmText] = useState('');
-  const [isWiping, setIsWiping] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
 
   const handleWipeData = async () => {
@@ -22,7 +21,6 @@ export default function AvanzadoPage() {
     }
 
     setLoading(true);
-    setIsWiping(true);
     setSuccessMsg('');
 
     try {
@@ -34,11 +32,11 @@ export default function AvanzadoPage() {
       
       setSuccessMsg('¡Todos los datos han sido borrados con éxito! La cuenta está en cero.');
       setConfirmText('');
-    } catch (err: any) {
-      alert(`Error al borrar los datos: ${err.message}`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error desconocido';
+      alert(`Error al borrar los datos: ${msg}`);
     } finally {
       setLoading(false);
-      setIsWiping(false);
     }
   };
 

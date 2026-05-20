@@ -9,7 +9,45 @@
   --border: #d2d2d7; /* Apple subtle border */
 }
 
-/* Force light mode by intentionally NOT having a @media (prefers-color-scheme: dark) block */
+html.dark {
+  /* Dark theme tokens (kept neutral and high-contrast) */
+  --background: #0b1220;
+  --foreground: #e5e7eb;
+  --surface: #0f172a;
+  --border: #243244;
+  color-scheme: dark;
+}
+
+/* Theme-compat layer: many screens use fixed slate/white utilities.
+   Override the most common ones under .dark so dark mode applies across pages
+   without refactoring every component immediately. */
+html.dark .bg-white { background-color: var(--surface) !important; }
+html.dark .bg-slate-50 { background-color: rgba(255,255,255,0.04) !important; }
+html.dark .bg-slate-50\/50 { background-color: rgba(255,255,255,0.03) !important; }
+html.dark .bg-slate-50\/80 { background-color: rgba(255,255,255,0.05) !important; }
+html.dark .bg-slate-100 { background-color: rgba(255,255,255,0.06) !important; }
+html.dark .bg-slate-900 { background-color: rgba(0,0,0,0.4) !important; }
+
+html.dark .text-slate-900 { color: #f3f4f6 !important; }
+html.dark .text-slate-800 { color: #e5e7eb !important; }
+html.dark .text-slate-700 { color: #d1d5db !important; }
+html.dark .text-slate-600 { color: #cbd5e1 !important; }
+html.dark .text-slate-500 { color: #94a3b8 !important; }
+html.dark .text-slate-400 { color: #94a3b8 !important; }
+
+html.dark .border-slate-200 { border-color: rgba(148,163,184,0.25) !important; }
+html.dark .border-slate-100 { border-color: rgba(148,163,184,0.18) !important; }
+html.dark .border-[#d2d2d7]\/50 { border-color: rgba(148,163,184,0.22) !important; }
+html.dark .border-[#d2d2d7]\/40 { border-color: rgba(148,163,184,0.18) !important; }
+
+html.dark .hover\:bg-slate-50:hover { background-color: rgba(255,255,255,0.05) !important; }
+html.dark .hover\:bg-\[\#e8e8ed\]:hover { background-color: rgba(255,255,255,0.05) !important; }
+html.dark .bg-\[\#f5f5f7\]\/80 { background-color: rgba(15,23,42,0.85) !important; }
+html.dark .bg-\[\#f5f5f7\]\/70 { background-color: rgba(15,23,42,0.75) !important; }
+html.dark .bg-\[\#e8e8ed\] { background-color: rgba(255,255,255,0.06) !important; }
+html.dark .text-\[\#1d1d1f\] { color: var(--foreground) !important; }
+html.dark .text-\[\#424245\] { color: #cbd5e1 !important; }
+html.dark .text-\[\#86868b\] { color: #94a3b8 !important; }
 
 body {
   color: var(--foreground);

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { PlusCircle, MinusCircle, FileDown, Search, Loader2 } from 'lucide-react';
+import { PlusCircle, MinusCircle, Search, Loader2 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { createClient } from '@/utils/supabase/client';
 import { parseDateOnly } from '@/utils/date';
@@ -205,7 +205,7 @@ export default function TransaccionesPage() {
       <div className="bg-surface p-4 rounded-xl shadow-sm border border-border flex flex-wrap gap-4 items-end mb-4">
         <div className="flex flex-col min-w-[140px]">
           <label className="text-xs font-semibold text-slate-500 mb-1">Periodo</label>
-          <select value={timeFilter} onChange={e=>setTimeFilter(e.target.value as any)} className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-500/20">
+          <select value={timeFilter} onChange={e=>setTimeFilter(e.target.value as typeof timeFilter)} className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-500/20">
             <option value="todos">Todos los tiempos</option>
             <option value="semana">Esta Semana</option>
             <option value="mes">Este Mes</option>
@@ -215,7 +215,7 @@ export default function TransaccionesPage() {
 
         <div className="flex flex-col min-w-[160px]">
           <label className="text-xs font-semibold text-slate-500 mb-1">Orden de Fecha</label>
-          <select value={sortOrder} onChange={e=>setSortOrder(e.target.value as any)} className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-500/20">
+          <select value={sortOrder} onChange={e=>setSortOrder(e.target.value as typeof sortOrder)} className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-500/20">
             <option value="desc">Más recientes primero</option>
             <option value="asc">Más antiguas primero</option>
           </select>

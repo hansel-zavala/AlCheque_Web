@@ -57,8 +57,6 @@ export default function DashboardPage() {
       setLoading(true);
       
       const now = new Date();
-      // First day of current month
-      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
       // First day of 5 months ago (so we get 6 months total including current)
       const firstDaySixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1).toISOString();
 

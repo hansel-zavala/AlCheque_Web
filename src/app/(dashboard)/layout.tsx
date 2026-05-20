@@ -45,7 +45,7 @@ export default function DashboardLayout({
         <Header />
         
         {/* Page Content */}
-        <div className="flex-1 overflow-auto p-6 animate-slide-up bg-slate-50">
+        <div className="flex-1 overflow-auto p-6 animate-slide-up bg-background">
           {children}
         </div>
       </main>

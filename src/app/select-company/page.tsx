@@ -16,6 +16,16 @@ export default function SelectCompanyPage() {
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
 
+  type UserCompanyRow = {
+    role: string;
+    companies: {
+      id: string;
+      name: string;
+      rfc: string | null;
+      currency: string | null;
+    };
+  };
+
   useEffect(() => {
     async function fetchCompanies() {
       // Obtenemos las empresas a las que el usuario tiene acceso
@@ -33,13 +43,16 @@ export default function SelectCompanyPage() {
       
       if (!error && data) {
         // Mapeamos la respuesta para que coincida con el store
-        const formattedCompanies: Company[] = data.map((item: any) => ({
-          id: item.companies.id,
-          name: item.companies.name,
-          rfc: item.companies.rfc,
-          currency: item.companies.currency,
-          role: item.role
-        }));
+        const rows = data as unknown as UserCompanyRow[];
+        const formattedCompanies: Company[] = rows
+          .filter((item) => !!item.companies?.id)
+          .map((item) => ({
+            id: item.companies.id,
+            name: item.companies.name,
+            rfc: item.companies.rfc ?? '',
+            currency: item.companies.currency ?? 'HNL',
+            role: item.role,
+          }));
         setExistingCompanies(formattedCompanies);
       }
       setLoading(false);

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { X, User, DollarSign, Loader2, Save, Plus, Trash2, CheckCircle2, Clock } from 'lucide-react';
+import { X, User, DollarSign, Loader2, Save, Plus, CheckCircle2, Clock } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { formatLocalDateInputValue } from '@/utils/date';
 import { useCompanyStore } from '@/store/useCompanyStore';
@@ -212,7 +212,6 @@ export function TerapeutaDrawer({ isOpen, onClose, terapeutaId, onSuccess }: Ter
 
   if (!isOpen) return null;
 
-  const selectedPago = pagos.find(p => p.id === selectedPagoId);
   const pagoMesActual = pagos.find(p => p.mes === mesActual && p.anio === anioActual);
 
   return (

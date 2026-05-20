@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -15,9 +16,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es">
+    <html lang="es" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased bg-background text-foreground`}>
-        {children}
+        <script
+          // Set theme before React hydrates to avoid flash.
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){try{var t=localStorage.getItem('alcheque-theme')||'light';var r=document.documentElement;if(t==='dark')r.classList.add('dark');else r.classList.remove('dark');}catch(e){}})();",
+          }}
+        />
+        <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
   );
