@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { X, User, DollarSign, Loader2, Save, Plus, CheckCircle2, Clock } from 'lucide-react';
+import { X, User, Loader2, Save, Plus, CheckCircle2, Clock, Coins, CalendarDays } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { formatLocalDateInputValue } from '@/utils/date';
 import { useCompanyStore } from '@/store/useCompanyStore';
@@ -216,34 +216,44 @@ export function TerapeutaDrawer({ isOpen, onClose, terapeutaId, onSuccess }: Ter
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/50 backdrop-blur-sm" onClick={onClose}>
-      <div className="w-full max-w-2xl bg-white h-full shadow-2xl flex flex-col animate-slide-left overflow-hidden" onClick={e => e.stopPropagation()}>
+      <div className="w-full max-w-2xl bg-white dark:bg-slate-950 h-full shadow-2xl flex flex-col animate-slide-left overflow-hidden" onClick={e => e.stopPropagation()}>
         
         {/* Header */}
-        <div className="px-6 py-4 border-b border-border bg-slate-50 flex justify-between items-center shrink-0">
+        <div className="px-6 py-4 border-b border-border bg-slate-50 dark:bg-slate-900/60 flex justify-between items-center shrink-0">
           <div>
-            <h2 className="text-xl font-bold text-slate-800">{terapeutaId ? nombre || 'Terapeuta' : 'Nuevo Terapeuta'}</h2>
-            <p className="text-sm text-slate-500">{terapeutaId ? puesto : 'Completa los datos para registrar'}</p>
+            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">
+              {terapeutaId ? 'Perfil del Terapeuta' : 'Nuevo Terapeuta'}
+            </h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              {terapeutaId ? nombre : 'Completa los datos para registrar'}
+            </p>
           </div>
-          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-200 transition-colors"><X size={20} /></button>
+          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800/50 transition-colors">
+            <X size={20} />
+          </button>
         </div>
 
         {/* Tabs */}
         {terapeutaId && (
-          <div className="flex border-b border-border px-2 shrink-0 bg-white">
+          <div className="flex border-b border-border px-2 shrink-0 bg-white dark:bg-slate-900 overflow-x-auto">
             {([
               { key: 'perfil', icon: <User size={15}/>, label: 'Datos' },
-              { key: 'salarios', icon: <DollarSign size={15}/>, label: 'Salarios' },
+              { key: 'salarios', icon: <Coins size={15}/>, label: 'Salarios' },
             ] as const).map(tab => (
-              <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-                className={`px-4 py-3 font-medium text-sm border-b-2 transition-colors flex items-center gap-1.5 ${activeTab === tab.key ? 'border-brand-500 text-brand-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
-                {tab.icon} {tab.label}
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`px-4 py-3 font-medium text-sm border-b-2 transition-colors flex items-center gap-1.5 whitespace-nowrap ${
+                  activeTab === tab.key ? 'border-brand-500 text-brand-600 dark:text-brand-400' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                }`}
+              >  {tab.icon} {tab.label}
               </button>
             ))}
           </div>
         )}
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto p-6 bg-slate-50/30">
+        <div className="flex-1 overflow-y-auto p-6 bg-slate-50/30 dark:bg-slate-950">
           {loading ? (
             <div className="flex justify-center py-20"><Loader2 className="animate-spin text-brand-500" size={32} /></div>
           ) : activeTab === 'perfil' ? (
@@ -251,23 +261,23 @@ export function TerapeutaDrawer({ isOpen, onClose, terapeutaId, onSuccess }: Ter
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
                   <label className="block text-xs font-medium text-slate-500 mb-1">Nombre Completo *</label>
-                  <input required value={nombre} onChange={e => setNombre(e.target.value)} className="px-3 py-2 w-full rounded-lg border border-border bg-white text-sm focus:ring-2 focus:ring-brand-500/20" />
+                  <input required value={nombre} onChange={e => setNombre(e.target.value)} className="px-3 py-2 w-full rounded-lg border border-border bg-[#ffffff] dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm focus:ring-2 focus:ring-brand-500/20" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-slate-500 mb-1">Puesto *</label>
-                  <input required value={puesto} onChange={e => setPuesto(e.target.value)} placeholder="Ej. Terapeuta Ocupacional" className="px-3 py-2 w-full rounded-lg border border-border bg-white text-sm focus:ring-2 focus:ring-brand-500/20" />
+                  <input required value={puesto} onChange={e => setPuesto(e.target.value)} placeholder="Ej. Terapeuta Ocupacional" className="px-3 py-2 w-full rounded-lg border border-border bg-[#ffffff] dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm focus:ring-2 focus:ring-brand-500/20" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-slate-500 mb-1">Salario Mensual (L) *</label>
-                  <input required type="number" min="0" step="0.01" value={salarioMensual} onChange={e => setSalarioMensual(e.target.value)} className="px-3 py-2 w-full rounded-lg border border-border bg-white text-sm focus:ring-2 focus:ring-brand-500/20" />
+                  <input required type="number" min="0" step="0.01" value={salarioMensual} onChange={e => setSalarioMensual(e.target.value)} className="px-3 py-2 w-full rounded-lg border border-border bg-[#ffffff] dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm focus:ring-2 focus:ring-brand-500/20" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-slate-500 mb-1">Teléfono</label>
-                  <input type="tel" value={telefono} onChange={e => setTelefono(e.target.value)} className="px-3 py-2 w-full rounded-lg border border-border bg-white text-sm focus:ring-2 focus:ring-brand-500/20" />
+                  <input type="tel" value={telefono} onChange={e => setTelefono(e.target.value)} className="px-3 py-2 w-full rounded-lg border border-border bg-[#ffffff] dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm focus:ring-2 focus:ring-brand-500/20" />
                 </div>
-                <div>
+                <div className="col-span-2">
                   <label className="block text-xs font-medium text-slate-500 mb-1">Correo Electrónico</label>
-                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="px-3 py-2 w-full rounded-lg border border-border bg-white text-sm focus:ring-2 focus:ring-brand-500/20" />
+                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="px-3 py-2 w-full rounded-lg border border-border bg-[#ffffff] dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm focus:ring-2 focus:ring-brand-500/20" />
                 </div>
               </div>
             </form>
@@ -275,112 +285,127 @@ export function TerapeutaDrawer({ isOpen, onClose, terapeutaId, onSuccess }: Ter
             /* TAB SALARIOS */
             <div className="space-y-5">
               {/* Resumen mes actual */}
-              <div className={`rounded-xl border p-4 ${pagoMesActual?.estado === 'pagado' ? 'bg-green-50 border-green-200' : 'bg-orange-50 border-orange-200'}`}>
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-sm font-bold text-slate-800">Salario {MESES[mesActual-1]} {anioActual}</h4>
+              <div className={`rounded-xl border p-4 ${
+                pagoMesActual?.estado === 'pagado'
+                  ? 'bg-green-50 dark:bg-emerald-950/20 border-green-200 dark:border-emerald-900/30'
+                  : 'bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-900/30'
+              }`}>
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                    <CalendarDays size={16} className="text-brand-500" />
+                    Mes Actual ({MESES[mesActual-1]} {anioActual})
+                  </h4>
                   {pagoMesActual ? (
-                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${pagoMesActual.estado === 'pagado' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
-                      {pagoMesActual.estado === 'pagado' ? 'Pagado' : pagoMesActual.estado === 'parcial' ? 'Parcial' : 'Pendiente'}
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${
+                      pagoMesActual.estado === 'pagado' ? 'bg-green-100 dark:bg-emerald-950/40 text-green-700 dark:text-emerald-400' : 'bg-orange-100 dark:bg-orange-950/40 text-orange-700 dark:text-orange-400'
+                    }`}>
+                      {pagoMesActual.estado === 'pagado' ? <><CheckCircle2 size={12}/> Pagado</> : <><Clock size={12}/> Pendiente</>}
                     </span>
-                  ) : <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-500">Sin registro</span>}
+                  ) : (
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">Sin registro</span>
+                  )}
                 </div>
+
                 {pagoMesActual ? (
-                  <div className="text-sm flex justify-between">
-                    <span className="text-slate-600">Pagado: <strong className="text-slate-800 font-mono">L {pagoMesActual.monto_pagado.toFixed(2)}</strong></span>
-                    <span className="text-slate-600">Pendiente: <strong className="text-orange-700 font-mono">L {(pagoMesActual.monto_total - pagoMesActual.monto_pagado).toFixed(2)}</strong></span>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-slate-600 dark:text-slate-400">Total a Pagar</span>
+                      <span className="font-bold text-slate-800 dark:text-slate-200 font-mono">L {pagoMesActual.monto_total.toFixed(2)}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-slate-600 dark:text-slate-400">Abonado</span>
+                      <span className="font-bold text-slate-800 dark:text-slate-200 font-mono">L {pagoMesActual.monto_pagado.toFixed(2)}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm pt-2 border-t border-dashed border-slate-200 dark:border-slate-800">
+                      <span className="text-slate-800 dark:text-slate-200 font-semibold">Saldo Restante</span>
+                      <span className={`font-bold font-mono text-lg ${pagoMesActual.estado === 'pagado' ? 'text-green-700 dark:text-emerald-400' : 'text-orange-700 dark:text-orange-400'}`}>
+                        L {(pagoMesActual.monto_total - pagoMesActual.monto_pagado).toFixed(2)}
+                      </span>
+                    </div>
                   </div>
                 ) : (
                   <button onClick={handleGenerarPagoMes} disabled={saving}
                     className="mt-2 w-full bg-brand-600 hover:bg-brand-700 text-white py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50">
-                    <Plus size={14}/> Generar Registro de Salario
+                    <Plus size={14}/> Generar Registro
                   </button>
                 )}
               </div>
 
               {/* Lista de meses */}
-              <div>
-                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Historial de Pagos</h4>
-                {pagos.length === 0 ? (
-                  <p className="text-sm text-slate-400 italic text-center py-4">No hay registros de salario aún.</p>
-                ) : (
-                  <div className="space-y-2">
-                    {pagos.map(p => {
-                      const saldo = p.monto_total - p.monto_pagado;
-                      const isSelected = selectedPagoId === p.id;
-                      return (
-                        <div key={p.id} className={`border rounded-xl transition-all ${isSelected ? 'border-brand-300 bg-brand-50' : 'border-slate-200 bg-white hover:border-slate-300'}`}>
-                          <button className="w-full flex items-center justify-between p-3 text-left" onClick={() => setSelectedPagoId(isSelected ? null : p.id)}>
-                            <div className="flex items-center gap-2">
-                              {p.estado === 'pagado' ? <CheckCircle2 size={16} className="text-green-500"/> : <Clock size={16} className="text-orange-400"/>}
-                              <span className="text-sm font-semibold text-slate-700">{MESES[p.mes-1]} {p.anio}</span>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-sm font-mono font-bold text-slate-700">L {p.monto_pagado.toFixed(2)} / {p.monto_total.toFixed(2)}</p>
-                              {saldo > 0 && <p className="text-[10px] text-orange-500">Saldo: L {saldo.toFixed(2)}</p>}
-                            </div>
-                          </button>
+              <div className="space-y-3 flex-1 overflow-y-auto pr-1">
+                {pagos.map(p => {
+                  const isSelected = selectedPagoId === p.id;
+                  const saldo = p.monto_total - p.monto_pagado;
+                  return (
+                    <div key={p.id} className={`border rounded-xl transition-all ${
+                      isSelected
+                        ? 'border-brand-300 dark:border-brand-900/40 bg-brand-50 dark:bg-brand-950/20'
+                        : 'border-slate-200 dark:border-slate-800 bg-[#ffffff] dark:bg-slate-800/70 hover:border-slate-300 dark:hover:border-slate-700'
+                    }`}>
+                      <div onClick={() => setSelectedPagoId(isSelected ? null : p.id)} className="p-4 flex items-center justify-between cursor-pointer">
+                        <div>
+                          <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">{MESES[p.mes-1]} {p.anio}</p>
+                          <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Total devengado: L {p.monto_total.toFixed(2)}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-mono font-bold text-slate-600 dark:text-slate-200">L {p.monto_pagado.toFixed(2)} / {p.monto_total.toFixed(2)}</p>
+                          {saldo > 0 && <p className="text-[10px] text-orange-500 font-mono">Saldo: L {saldo.toFixed(2)}</p>}
+                        </div>
+                      </div>
 
-                          {isSelected && p.estado !== 'pagado' && (
-                            <div className="px-3 pb-3 border-t border-brand-100 pt-3 space-y-3">
-                              <p className="text-xs font-bold text-brand-700 uppercase tracking-wider">Registrar Abono</p>
-                              <div className="grid grid-cols-2 gap-2">
+                      {isSelected && (
+                        <div className="px-4 pb-4 pt-3 border-t border-brand-100 dark:border-brand-900/30 space-y-4">
+                          {p.estado !== 'pagado' && (
+                            <>
+                              <h5 className="text-xs font-bold text-brand-700 dark:text-brand-400 uppercase tracking-wider">Registrar Abono</h5>
+                              <div className="grid grid-cols-2 gap-3">
                                 <div>
                                   <label className="block text-xs text-slate-500 mb-1">Monto (L)</label>
-                                  <input type="number" min="0.01" step="0.01" max={saldo} value={montoAbono} onChange={e => setMontoAbono(e.target.value)}
-                                    className="px-3 py-1.5 w-full rounded-lg border border-border bg-white text-sm focus:ring-2 focus:ring-brand-500/20" placeholder="0.00" />
+                                  <input type="number" step="0.01" min="0.01" max={saldo} value={montoAbono} onChange={e => setMontoAbono(e.target.value)} className="px-3 py-1.5 w-full rounded-lg border border-border bg-[#ffffff] dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm focus:ring-2 focus:ring-brand-500/20" />
                                 </div>
                                 <div>
                                   <label className="block text-xs text-slate-500 mb-1">Fecha</label>
-                                  <input type="date" value={fechaAbono} onChange={e => setFechaAbono(e.target.value)}
-                                    className="px-3 py-1.5 w-full rounded-lg border border-border bg-white text-sm focus:ring-2 focus:ring-brand-500/20" />
+                                  <input type="date" value={fechaAbono} onChange={e => setFechaAbono(e.target.value)} className="px-3 py-1.5 w-full rounded-lg border border-border bg-[#ffffff] dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm focus:ring-2 focus:ring-brand-500/20" />
                                 </div>
-                                <div>
+                                <div className="col-span-2">
                                   <label className="block text-xs text-slate-500 mb-1">Método de Pago</label>
-                                  <select value={metodoPago} onChange={e => setMetodoPago(e.target.value)}
-                                    className="px-3 py-1.5 w-full rounded-lg border border-border bg-white text-sm focus:ring-2 focus:ring-brand-500/20">
-                                    <option value="efectivo">Efectivo</option>
-                                    <option value="transferencia">Transferencia</option>
-                                    <option value="cheque">Cheque</option>
+                                  <select value={metodoPago} onChange={e => setMetodoPago(e.target.value)} className="px-3 py-1.5 w-full rounded-lg border border-border bg-[#f1f5f9] dark:bg-slate-800 text-sm focus:ring-2 focus:ring-brand-500/20 text-slate-700 dark:text-slate-200">
+                                    <option value="efectivo" className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">Efectivo</option>
+                                    <option value="transferencia" className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">Transferencia</option>
+                                    <option value="cheque" className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">Cheque</option>
                                   </select>
                                 </div>
-                                <div>
-                                  <label className="block text-xs text-slate-500 mb-1">Notas</label>
-                                  <input value={notasAbono} onChange={e => setNotasAbono(e.target.value)} placeholder="Opcional"
-                                    className="px-3 py-1.5 w-full rounded-lg border border-border bg-white text-sm focus:ring-2 focus:ring-brand-500/20" />
-                                </div>
                               </div>
-                              <button onClick={handleRegistrarAbono} disabled={saving || !montoAbono}
-                                className="w-full bg-brand-600 hover:bg-brand-700 text-white py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50">
-                                {saving ? <Loader2 size={14} className="animate-spin"/> : <Plus size={14}/>}
-                                Registrar Abono
+                              <button onClick={handleRegistrarAbono} disabled={saving || !montoAbono} className="w-full bg-brand-600 hover:bg-brand-700 text-white py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50">
+                                {saving ? <Loader2 size={14} className="animate-spin"/> : <Plus size={14}/>} Registrar
                               </button>
-                            </div>
+                            </>
                           )}
-
-                          {isSelected && abonos.length > 0 && (
-                            <div className="px-3 pb-3 space-y-1">
-                              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-2 mb-1">Abonos Realizados</p>
-                              {abonos.map(a => (
-                                <div key={a.id} className="flex justify-between items-center text-xs text-slate-600 bg-slate-50 rounded-lg px-3 py-1.5">
-                                  <span>{new Date(a.fecha + 'T00:00:00').toLocaleDateString('es-HN')} · {a.metodo_pago || 'Efectivo'}</span>
-                                  <span className="font-mono font-bold text-green-700">L {a.monto.toFixed(2)}</span>
+                          {abonos.length > 0 && (
+                            <div className="space-y-1.5 pt-2">
+                              <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Historial de Abonos</p>
+                              {abonos.map(ab => (
+                                <div key={ab.id} className="flex justify-between items-center text-xs bg-slate-50 dark:bg-slate-800/40 p-2 rounded-lg">
+                                  <span className="text-slate-500 dark:text-slate-400">{new Date(ab.fecha + 'T00:00:00').toLocaleDateString('es-HN')} • {ab.metodo_pago}</span>
+                                  <span className="font-bold text-green-700 dark:text-emerald-400 font-mono">+ L {ab.monto.toFixed(2)}</span>
                                 </div>
                               ))}
                             </div>
                           )}
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-            </div>
-          )}
+            </div>)}
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-border bg-white flex justify-end gap-3 shrink-0">
-          <button onClick={onClose} className="px-5 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors">Cerrar</button>
+        <div className="px-6 py-4 border-t border-border bg-white dark:bg-slate-900 flex justify-end gap-3 shrink-0">
+          <button onClick={onClose} className="px-5 py-2 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+            Cerrar
+          </button>
           {activeTab === 'perfil' && (
             <button type="submit" form="terapeutaForm" disabled={saving}
               className="px-6 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-sm font-medium flex items-center gap-2 transition-all shadow-md disabled:opacity-50">

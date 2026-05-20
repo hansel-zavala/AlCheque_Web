@@ -77,17 +77,17 @@ export default function TerapeutasPage() {
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
-          { label: `Nómina ${MESES[mesActual-1]}`, value: `L ${totalNomina.toFixed(2)}`, color: 'slate', icon: <Users size={18}/> },
-          { label: 'Total Pagado', value: `L ${totalPagado.toFixed(2)}`, color: 'green', icon: <CheckCircle2 size={18}/> },
-          { label: 'Saldo Pendiente', value: `L ${totalPendiente.toFixed(2)}`, color: 'orange', icon: <AlertCircle size={18}/> },
+          { label: `Nómina ${MESES[mesActual-1]}`, value: `L ${totalNomina.toFixed(2)}`, bgClass: 'bg-slate-100 dark:bg-slate-800', textClass: 'text-slate-600 dark:text-slate-300', icon: <Users size={18}/> },
+          { label: 'Total Pagado', value: `L ${totalPagado.toFixed(2)}`, bgClass: 'bg-green-100 dark:bg-emerald-950/40', textClass: 'text-green-600 dark:text-emerald-400', icon: <CheckCircle2 size={18}/> },
+          { label: 'Saldo Pendiente', value: `L ${totalPendiente.toFixed(2)}`, bgClass: 'bg-orange-100 dark:bg-orange-950/40', textClass: 'text-orange-600 dark:text-orange-400', icon: <AlertCircle size={18}/> },
         ].map(kpi => (
           <div key={kpi.label} className="bg-surface border border-border rounded-xl p-4 shadow-sm flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center bg-${kpi.color}-100 text-${kpi.color}-600 shrink-0`}>
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${kpi.bgClass} ${kpi.textClass} shrink-0`}>
               {kpi.icon}
             </div>
             <div>
-              <p className="text-xs text-slate-500">{kpi.label}</p>
-              <p className="text-lg font-bold text-slate-800 font-mono">{kpi.value}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">{kpi.label}</p>
+              <p className="text-lg font-bold text-slate-800 dark:text-slate-100 font-mono">{kpi.value}</p>
             </div>
           </div>
         ))}
@@ -102,12 +102,12 @@ export default function TerapeutasPage() {
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
             placeholder="Buscar terapeuta o puesto..."
-            className="pl-10 pr-4 py-2.5 w-full rounded-xl border border-border bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-sm transition-all shadow-inner"
+            className="pl-10 pr-4 py-2.5 w-full rounded-xl border border-border bg-slate-50 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-slate-800 dark:text-slate-200 text-sm transition-all shadow-inner"
           />
         </div>
         <button
           onClick={() => { setSelectedId(null); setIsDrawerOpen(true); }}
-          className="flex items-center space-x-2 bg-slate-900 text-white px-5 py-2.5 rounded-xl hover:bg-slate-800 transition-all shadow-sm"
+          className="flex items-center space-x-2 bg-slate-900 dark:bg-slate-800 text-white px-5 py-2.5 rounded-xl hover:bg-slate-800 dark:hover:bg-slate-700 transition-all shadow-sm border border-transparent dark:border-border"
         >
           <UserPlus size={18} />
           <span className="font-medium">Nuevo Terapeuta</span>
@@ -118,7 +118,7 @@ export default function TerapeutasPage() {
       <div className="bg-surface rounded-2xl shadow-sm border border-border overflow-hidden">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-slate-50/80 border-b border-border text-slate-500 text-sm">
+            <tr className="bg-slate-50/80 dark:bg-slate-900/40 border-b border-border text-slate-500 dark:text-slate-400 text-sm">
               <th className="p-4 font-semibold">Terapeuta</th>
               <th className="p-4 font-semibold">Puesto</th>
               <th className="p-4 font-semibold text-right">Salario Mensual</th>
@@ -143,38 +143,38 @@ export default function TerapeutasPage() {
                 const res = getResumen(t.id);
                 const saldo = t.salario_mensual - (res?.monto_pagado ?? 0);
                 return (
-                  <tr key={t.id} className="hover:bg-slate-50 transition-colors cursor-pointer group"
+                  <tr key={t.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/40 border-b border-border/50 transition-colors cursor-pointer group"
                     onClick={() => { setSelectedId(t.id); setIsDrawerOpen(true); }}>
                     <td className="p-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-brand-100 flex items-center justify-center shrink-0">
-                          <span className="text-brand-700 font-bold text-sm">{t.nombre.charAt(0).toUpperCase()}</span>
+                        <div className="w-9 h-9 rounded-full bg-brand-100 dark:bg-brand-950/50 flex items-center justify-center shrink-0">
+                          <span className="text-brand-700 dark:text-brand-400 font-bold text-sm">{t.nombre.charAt(0).toUpperCase()}</span>
                         </div>
                         <div>
-                          <p className="font-medium text-slate-800">{t.nombre}</p>
-                          {t.email && <p className="text-xs text-slate-400">{t.email}</p>}
+                          <p className="font-medium text-slate-800 dark:text-slate-200">{t.nombre}</p>
+                          {t.email && <p className="text-xs text-slate-400 dark:text-slate-500">{t.email}</p>}
                         </div>
                       </div>
                     </td>
-                    <td className="p-4 text-sm text-slate-600">{t.puesto}</td>
-                    <td className="p-4 text-right font-mono font-semibold text-slate-800">
+                    <td className="p-4 text-sm text-slate-600 dark:text-slate-300">{t.puesto}</td>
+                    <td className="p-4 text-right font-mono font-semibold text-slate-800 dark:text-slate-200">
                       L {t.salario_mensual.toFixed(2)}
                     </td>
                     <td className="p-4 text-center">
                       {!res ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
                           <Clock size={12}/> Sin registro
                         </span>
                       ) : res.estado === 'pagado' ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-emerald-950/40 text-green-700 dark:text-emerald-400">
                           <CheckCircle2 size={12}/> Pagado
                         </span>
                       ) : (
                         <div className="space-y-1">
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-orange-100 dark:bg-orange-950/40 text-orange-700 dark:text-orange-400">
                             <DollarSign size={12}/> {res.estado === 'parcial' ? 'Parcial' : 'Pendiente'}
                           </span>
-                          {saldo > 0 && <p className="text-[10px] text-slate-400 font-mono">Saldo: L {saldo.toFixed(2)}</p>}
+                          {saldo > 0 && <p className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">Saldo: L {saldo.toFixed(2)}</p>}
                         </div>
                       )}
                     </td>

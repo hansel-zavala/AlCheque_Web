@@ -134,7 +134,11 @@ export function PacienteMatricula({ pacienteId }: PacienteMatriculaProps) {
     <div className="space-y-5">
 
       {/* Matrícula del año actual */}
-      <div className={`rounded-xl border p-4 ${matriculaActual?.estado === 'pagada' ? 'bg-green-50 border-green-200' : 'bg-orange-50 border-orange-200'}`}>
+      <div className={`rounded-xl border p-4 ${
+        matriculaActual?.estado === 'pagada'
+          ? 'bg-green-50 dark:bg-emerald-950/20 border-green-200 dark:border-emerald-900/30'
+          : 'bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-900/30'
+      }`}>
         <div className="flex items-center justify-between mb-3">
           <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2">
             <GraduationCap size={16} className="text-brand-500" />
@@ -143,15 +147,15 @@ export function PacienteMatricula({ pacienteId }: PacienteMatriculaProps) {
           {matriculaActual ? (
             <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${
               matriculaActual.estado === 'pagada'
-                ? 'bg-green-100 text-green-700'
-                : 'bg-orange-100 text-orange-700'
+                ? 'bg-green-100 dark:bg-emerald-950/40 text-green-700 dark:text-emerald-400'
+                : 'bg-orange-100 dark:bg-orange-950/40 text-orange-700 dark:text-orange-400'
             }`}>
               {matriculaActual.estado === 'pagada'
                 ? <><CheckCircle2 size={12} /> Pagada</>
                 : <><Clock size={12} /> Pendiente</>}
             </span>
           ) : (
-            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-500">Sin matrícula</span>
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">Sin matrícula</span>
           )}
         </div>
 
@@ -167,7 +171,7 @@ export function PacienteMatricula({ pacienteId }: PacienteMatriculaProps) {
                 step="0.01"
                 value={montoGenerar}
                 onChange={e => setMontoGenerar(e.target.value)}
-                className="px-3 py-2 w-full rounded-lg border border-border bg-white text-sm focus:ring-2 focus:ring-brand-500/20" 
+                className="px-3 py-2 w-full rounded-lg border border-border bg-[#ffffff] dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm focus:ring-2 focus:ring-brand-500/20" 
                 placeholder="Ej. 500.00"
               />
             </div>
@@ -185,36 +189,36 @@ export function PacienteMatricula({ pacienteId }: PacienteMatriculaProps) {
           <div className="flex items-center justify-between text-sm">
             <div>
               <p className="text-slate-500">Fecha de pago</p>
-              <p className="font-semibold text-slate-800">{matriculaActual.fecha_pago ? new Date(matriculaActual.fecha_pago + 'T00:00:00').toLocaleDateString('es-HN') : '—'}</p>
+              <p className="font-semibold text-slate-800 dark:text-slate-200">{matriculaActual.fecha_pago ? new Date(matriculaActual.fecha_pago + 'T00:00:00').toLocaleDateString('es-HN') : '—'}</p>
             </div>
             <div className="text-right">
               <p className="text-slate-500">Monto pagado</p>
-              <p className="font-bold text-green-700 font-mono text-lg">L {matriculaActual.monto.toFixed(2)}</p>
+              <p className="font-bold text-green-700 dark:text-emerald-400 font-mono text-lg">L {matriculaActual.monto.toFixed(2)}</p>
             </div>
           </div>
         ) : (
           <div className="space-y-3">
             <div className="flex items-center justify-between text-sm">
               <span className="text-slate-600 flex items-center gap-1"><DollarSign size={14}/>Monto</span>
-              <span className="font-bold text-orange-700 font-mono">L {matriculaActual.monto.toFixed(2)}</span>
+              <span className="font-bold text-orange-700 dark:text-orange-400 font-mono">L {matriculaActual.monto.toFixed(2)}</span>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1">Fecha de Pago</label>
                 <input type="date" value={fechaPago} onChange={e => setFechaPago(e.target.value)}
-                  className="px-3 py-1.5 w-full rounded-lg border border-border bg-white text-sm focus:ring-2 focus:ring-brand-500/20" />
+                  className="px-3 py-1.5 w-full rounded-lg border border-border bg-[#ffffff] dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm focus:ring-2 focus:ring-brand-500/20" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1">Método de Pago</label>
                 <select 
                   value={metodoPago} 
                   onChange={e => setMetodoPago(e.target.value)}
-                  className="px-3 py-1.5 w-full rounded-lg border border-border bg-white text-sm focus:ring-2 focus:ring-brand-500/20"
+                  className="px-3 py-1.5 w-full rounded-lg border border-border bg-[#f1f5f9] dark:bg-slate-800 focus:bg-[#ffffff] dark:focus:bg-slate-900 text-sm focus:ring-2 focus:ring-brand-500/20 text-slate-700 dark:text-slate-200"
                 >
-                  <option value="Efectivo">Efectivo</option>
-                  <option value="Transferencia">Transferencia</option>
-                  <option value="Tarjeta de Credito/Debito">Tarjeta de Crédito/Débito</option>
-                  <option value="Cheque">Cheque</option>
+                  <option value="Efectivo" className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">Efectivo</option>
+                  <option value="Transferencia" className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">Transferencia</option>
+                  <option value="Tarjeta de Credito/Debito" className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">Tarjeta de Crédito/Débito</option>
+                  <option value="Cheque" className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">Cheque</option>
                 </select>
               </div>
             </div>
@@ -236,19 +240,19 @@ export function PacienteMatricula({ pacienteId }: PacienteMatriculaProps) {
           <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Historial de Matrículas</h4>
           <div className="space-y-2">
             {matriculas.filter(m => m.anio_escolar !== ANIO_ACTUAL).map(m => (
-              <div key={m.id} className="flex items-center justify-between bg-white border border-slate-100 rounded-xl p-3 shadow-sm">
+              <div key={m.id} className="flex items-center justify-between bg-[#ffffff] dark:bg-slate-800/70 border border-slate-100 dark:border-slate-800/80 rounded-xl p-3 shadow-sm">
                 <div className="flex items-center gap-2">
                   {m.estado === 'pagada'
                     ? <CheckCircle2 size={16} className="text-green-500" />
                     : <Clock size={16} className="text-slate-400" />}
                   <div>
-                    <p className="text-sm font-semibold text-slate-700">Año {m.anio_escolar}</p>
-                    {m.fecha_pago && <p className="text-xs text-slate-400">{new Date(m.fecha_pago + 'T00:00:00').toLocaleDateString('es-HN')}</p>}
+                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">Año {m.anio_escolar}</p>
+                    {m.fecha_pago && <p className="text-xs text-slate-400 dark:text-slate-500">{new Date(m.fecha_pago + 'T00:00:00').toLocaleDateString('es-HN')}</p>}
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-mono font-bold text-slate-600">L {m.monto.toFixed(2)}</p>
-                  <span className={`text-[10px] font-bold uppercase ${m.estado === 'pagada' ? 'text-green-600' : 'text-slate-400'}`}>
+                  <p className="font-mono font-bold text-slate-600 dark:text-slate-200">L {m.monto.toFixed(2)}</p>
+                  <span className={`text-[10px] font-bold uppercase ${m.estado === 'pagada' ? 'text-green-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'}`}>
                     {m.estado}
                   </span>
                 </div>

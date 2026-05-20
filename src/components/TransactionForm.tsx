@@ -165,11 +165,11 @@ export function TransactionForm({ type, onClose, onSuccess, initialData }: Trans
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm animate-fade-in">
       <div className="bg-surface w-full max-w-2xl rounded-2xl shadow-xl overflow-hidden animate-slide-up">
         {/* Header */}
-        <div className={`px-6 py-4 border-b border-border flex justify-between items-center ${isIngreso ? 'bg-green-50' : 'bg-red-50'}`}>
-          <h2 className={`text-xl font-bold ${isIngreso ? 'text-green-700' : 'text-red-700'}`}>
+        <div className={`px-6 py-4 border-b border-border flex justify-between items-center ${isIngreso ? 'bg-green-50 dark:bg-emerald-950/20' : 'bg-red-50 dark:bg-rose-950/20'}`}>
+          <h2 className={`text-xl font-bold ${isIngreso ? 'text-green-700 dark:text-emerald-400' : 'text-red-700 dark:text-rose-400'}`}>
             {initialData ? 'Editar' : 'Registrar Nuevo'} {isIngreso ? 'Ingreso' : 'Egreso'}
           </h2>
-          <button onClick={onClose} type="button" className="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-200/50 transition-colors">
+          <button onClick={onClose} type="button" className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors">
             <X size={20} />
           </button>
         </div>
@@ -230,14 +230,14 @@ export function TransactionForm({ type, onClose, onSuccess, initialData }: Trans
                 required 
                 value={categoriaId}
                 onChange={(e) => setCategoriaId(e.target.value)}
-                className="px-4 py-2 w-full rounded-lg border border-border bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-slate-700"
+                className="px-4 py-2 w-full rounded-lg border border-border bg-[#f1f5f9] dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-slate-700 dark:text-slate-200"
               >
-                <option value="">Selecciona una categoría...</option>
+                <option value="" className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">Selecciona una categoría...</option>
                 {fetchingCats ? (
-                  <option disabled>Cargando categorías...</option>
+                  <option disabled className="bg-white dark:bg-slate-800 text-slate-400">Cargando categorías...</option>
                 ) : (
                   categorias.map(c => (
-                    <option key={c.id} value={c.id}>{c.nombre}</option>
+                    <option key={c.id} value={c.id} className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">{c.nombre}</option>
                   ))
                 )}
               </select>
@@ -249,12 +249,12 @@ export function TransactionForm({ type, onClose, onSuccess, initialData }: Trans
                 required 
                 value={metodoPago}
                 onChange={(e) => setMetodoPago(e.target.value)}
-                className="px-4 py-2 w-full rounded-lg border border-border bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-slate-700"
+                className="px-4 py-2 w-full rounded-lg border border-border bg-[#f1f5f9] dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-slate-700 dark:text-slate-200"
               >
-                <option value="efectivo">Efectivo</option>
-                <option value="transferencia">Transferencia</option>
-                <option value="tarjeta de credito/debito">Tarjeta de Crédito/Débito</option>
-                <option value="cheque">Cheque</option>
+                <option value="efectivo" className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">Efectivo</option>
+                <option value="transferencia" className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">Transferencia</option>
+                <option value="tarjeta de credito/debito" className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">Tarjeta de Crédito/Débito</option>
+                <option value="cheque" className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">Cheque</option>
               </select>
             </div>
           </div>
@@ -290,7 +290,7 @@ export function TransactionForm({ type, onClose, onSuccess, initialData }: Trans
           {/* Upload Comprobante */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">Comprobante Adjunto (Opcional)</label>
-            <div className="relative border-2 border-dashed border-slate-200 rounded-xl p-6 flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 transition-colors group">
+            <div className="relative border-2 border-dashed border-slate-200 rounded-xl p-6 flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 dark:hover:bg-slate-800/40 transition-colors group">
               <input 
                 type="file" 
                 accept="image/png, image/jpeg, application/pdf"

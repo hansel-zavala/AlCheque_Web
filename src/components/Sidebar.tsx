@@ -36,7 +36,7 @@ export function Sidebar() {
       <div className="p-4 border-b border-[#d2d2d7]/50">
         <Link 
           href="/select-company"
-          className="flex items-center justify-between p-2 rounded-xl hover:bg-white transition-colors group cursor-pointer border border-transparent hover:border-[#d2d2d7]/40 hover:shadow-sm"
+          className="flex items-center justify-between p-2 rounded-xl hover:bg-white dark:hover:bg-slate-800/60 transition-colors group cursor-pointer border border-transparent hover:border-[#d2d2d7]/40 hover:shadow-sm"
         >
           <div className="flex items-center gap-3 overflow-hidden">
             <div className="w-8 h-8 rounded-lg bg-brand-500 text-white flex items-center justify-center shrink-0 shadow-sm">

@@ -285,23 +285,23 @@ export function PacienteDrawer({ isOpen, onClose, pacienteId, onSuccess }: Pacie
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-6 py-4 border-b border-border bg-slate-50 flex justify-between items-center shrink-0">
+        <div className="px-6 py-4 border-b border-border bg-slate-50 dark:bg-slate-900/60 flex justify-between items-center shrink-0">
           <div>
-            <h2 className="text-xl font-bold text-slate-800">
+            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">
               {pacienteId ? 'Perfil del Paciente' : 'Nuevo Paciente'}
             </h2>
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               {pacienteId ? nombreCompleto : 'Completa los datos para registrar'}
             </p>
           </div>
-          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-200 transition-colors">
+          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800/50 transition-colors">
             <X size={20} />
           </button>
         </div>
 
         {/* Tabs */}
         {pacienteId && (
-          <div className="flex border-b border-border px-2 shrink-0 bg-white overflow-x-auto">
+          <div className="flex border-b border-border px-2 shrink-0 bg-white dark:bg-slate-900 overflow-x-auto">
             {([
               { key: 'perfil', icon: <User size={15}/>, label: 'Datos' },
               { key: 'servicios', icon: <BriefcaseMedical size={15}/>, label: 'Servicios' },
@@ -312,7 +312,7 @@ export function PacienteDrawer({ isOpen, onClose, pacienteId, onSuccess }: Pacie
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
                 className={`px-4 py-3 font-medium text-sm border-b-2 transition-colors flex items-center gap-1.5 whitespace-nowrap ${
-                  activeTab === tab.key ? 'border-brand-500 text-brand-600' : 'border-transparent text-slate-500 hover:text-slate-700'
+                  activeTab === tab.key ? 'border-brand-500 text-brand-600 dark:text-brand-400' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                 }`}
               >
                 {tab.icon} {tab.label}
@@ -322,7 +322,7 @@ export function PacienteDrawer({ isOpen, onClose, pacienteId, onSuccess }: Pacie
         )}
 
         {/* Body Content */}
-        <div className="flex-1 overflow-y-auto p-6 bg-slate-50/30">
+        <div className="flex-1 overflow-y-auto p-6 bg-slate-50/30 dark:bg-slate-950">
           {loading ? (
             <div className="flex justify-center py-20"><Loader2 className="animate-spin text-brand-500" size={32} /></div>
           ) : activeTab === 'matricula' && pacienteId ? (
@@ -333,31 +333,33 @@ export function PacienteDrawer({ isOpen, onClose, pacienteId, onSuccess }: Pacie
             <form id="perfilForm" onSubmit={handleSavePerfil} className="space-y-8">
               
               <section>
-                <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-4 flex items-center gap-2">
                   <User size={16} className="text-brand-500"/> Datos del Estudiante
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-medium text-slate-500 mb-1">Código Interno *</label>
-                    <input type="text" required value={codigoInterno} onChange={e=>setCodigoInterno(e.target.value)} className="px-3 py-2 w-full rounded-lg border border-border bg-white text-sm focus:ring-2 focus:ring-brand-500/20" placeholder="Ej. EXP-001" />
+                    <input type="text" required value={codigoInterno} onChange={e=>setCodigoInterno(e.target.value)} className="px-3 py-2 w-full rounded-lg border border-border bg-[#ffffff] dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm focus:ring-2 focus:ring-brand-500/20" placeholder="Ej. EXP-001" />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-slate-500 mb-1">Nombre Completo *</label>
-                    <input type="text" required value={nombreCompleto} onChange={e=>setNombreCompleto(e.target.value)} className="px-3 py-2 w-full rounded-lg border border-border bg-white text-sm focus:ring-2 focus:ring-brand-500/20" />
+                    <input type="text" required value={nombreCompleto} onChange={e=>setNombreCompleto(e.target.value)} className="px-3 py-2 w-full rounded-lg border border-border bg-[#ffffff] dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm focus:ring-2 focus:ring-brand-500/20" />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-slate-500 mb-1">Fecha Nacimiento</label>
-                    <input type="date" value={fechaNacimiento} onChange={e=>setFechaNacimiento(e.target.value)} className="px-3 py-2 w-full rounded-lg border border-border bg-white text-sm focus:ring-2 focus:ring-brand-500/20" />
+                    <input type="date" value={fechaNacimiento} onChange={e=>setFechaNacimiento(e.target.value)} className="px-3 py-2 w-full rounded-lg border border-border bg-[#ffffff] dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm focus:ring-2 focus:ring-brand-500/20" />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-slate-500 mb-1">Género</label>
-                    <select value={genero} onChange={e=>setGenero(e.target.value)} className="px-3 py-2 w-full rounded-lg border border-border bg-white text-sm focus:ring-2 focus:ring-brand-500/20">
-                      <option>Masculino</option><option>Femenino</option><option>Otro</option>
+                    <select value={genero} onChange={e=>setGenero(e.target.value)} className="px-3 py-2 w-full rounded-lg border border-border bg-[#f1f5f9] dark:bg-slate-800 focus:bg-[#ffffff] dark:focus:bg-slate-900 text-sm focus:ring-2 focus:ring-brand-500/20 text-slate-700 dark:text-slate-200">
+                      <option className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">Masculino</option>
+                      <option className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">Femenino</option>
+                      <option className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">Otro</option>
                     </select>
                   </div>
                   <div className="col-span-2">
                     <label className="block text-xs font-medium text-slate-500 mb-1">Grado Escolar / Nivel</label>
-                    <input type="text" value={gradoEscolar} onChange={e=>setGradoEscolar(e.target.value)} className="px-3 py-2 w-full rounded-lg border border-border bg-white text-sm focus:ring-2 focus:ring-brand-500/20" placeholder="Ej. 3er Grado" />
+                    <input type="text" value={gradoEscolar} onChange={e=>setGradoEscolar(e.target.value)} className="px-3 py-2 w-full rounded-lg border border-border bg-[#ffffff] dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm focus:ring-2 focus:ring-brand-500/20" placeholder="Ej. 3er Grado" />
                   </div>
                 </div>
               </section>
@@ -365,27 +367,30 @@ export function PacienteDrawer({ isOpen, onClose, pacienteId, onSuccess }: Pacie
               <hr className="border-slate-200" />
 
               <section>
-                <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-4 flex items-center gap-2">
                   <Users size={16} className="text-brand-500"/> Datos del Padre o Tutor
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="col-span-2">
                     <label className="block text-xs font-medium text-slate-500 mb-1">Nombre del Tutor *</label>
-                    <input type="text" required value={nombreTutor} onChange={e=>setNombreTutor(e.target.value)} className="px-3 py-2 w-full rounded-lg border border-border bg-white text-sm focus:ring-2 focus:ring-brand-500/20" />
+                    <input type="text" required value={nombreTutor} onChange={e=>setNombreTutor(e.target.value)} className="px-3 py-2 w-full rounded-lg border border-border bg-[#ffffff] dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm focus:ring-2 focus:ring-brand-500/20" />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-slate-500 mb-1">Relación</label>
-                    <select value={relacionTutor} onChange={e=>setRelacionTutor(e.target.value)} className="px-3 py-2 w-full rounded-lg border border-border bg-white text-sm focus:ring-2 focus:ring-brand-500/20">
-                      <option>Madre</option><option>Padre</option><option>Abuelo(a)</option><option>Tutor Legal</option>
+                    <select value={relacionTutor} onChange={e=>setRelacionTutor(e.target.value)} className="px-3 py-2 w-full rounded-lg border border-border bg-[#f1f5f9] dark:bg-slate-800 focus:bg-[#ffffff] dark:focus:bg-slate-900 text-sm focus:ring-2 focus:ring-brand-500/20 text-slate-700 dark:text-slate-200">
+                      <option className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">Madre</option>
+                      <option className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">Padre</option>
+                      <option className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">Abuelo(a)</option>
+                      <option className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">Tutor Legal</option>
                     </select>
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-slate-500 mb-1">Teléfono Móvil</label>
-                    <input type="tel" value={telefonoTutor} onChange={e=>setTelefonoTutor(e.target.value)} className="px-3 py-2 w-full rounded-lg border border-border bg-white text-sm focus:ring-2 focus:ring-brand-500/20" />
+                    <input type="tel" value={telefonoTutor} onChange={e=>setTelefonoTutor(e.target.value)} className="px-3 py-2 w-full rounded-lg border border-border bg-[#ffffff] dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm focus:ring-2 focus:ring-brand-500/20" />
                   </div>
                   <div className="col-span-2">
                     <label className="block text-xs font-medium text-slate-500 mb-1">Correo Electrónico (Facturas y Alertas)</label>
-                    <input type="email" value={emailTutor} onChange={e=>setEmailTutor(e.target.value)} className="px-3 py-2 w-full rounded-lg border border-border bg-white text-sm focus:ring-2 focus:ring-brand-500/20" />
+                    <input type="email" value={emailTutor} onChange={e=>setEmailTutor(e.target.value)} className="px-3 py-2 w-full rounded-lg border border-border bg-[#ffffff] dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm focus:ring-2 focus:ring-brand-500/20" />
                   </div>
                 </div>
               </section>
@@ -393,17 +398,17 @@ export function PacienteDrawer({ isOpen, onClose, pacienteId, onSuccess }: Pacie
             </form>
           ) : (
             <div className="space-y-6">
-              <div className="bg-brand-50 p-4 rounded-xl border border-brand-100 flex gap-3 items-end">
+              <div className="bg-brand-50 dark:bg-brand-950/20 p-4 rounded-xl border border-brand-100 dark:border-brand-900/30 flex gap-3 items-end">
                 <div className="flex-1">
-                  <label className="block text-xs font-bold text-brand-800 mb-1 uppercase tracking-wider">Asignar Nuevo Servicio</label>
-                  <select value={nuevoServicioId} onChange={e=>setNuevoServicioId(e.target.value)} className="px-3 py-2 w-full rounded-lg border border-brand-200 bg-white text-sm text-slate-700">
-                    <option value="">-- Selecciona un servicio del catálogo --</option>
-                    {serviciosCatalogo.map(s => <option key={s.id} value={s.id}>{s.nombre} (L {s.costo_hnl})</option>)}
+                  <label className="block text-xs font-bold text-brand-800 dark:text-brand-400 mb-1 uppercase tracking-wider">Asignar Nuevo Servicio</label>
+                  <select value={nuevoServicioId} onChange={e=>setNuevoServicioId(e.target.value)} className="px-3 py-2 w-full rounded-lg border border-brand-200 dark:border-brand-900/40 bg-[#f1f5f9] dark:bg-slate-800 text-sm text-slate-700 dark:text-slate-200 focus:outline-none">
+                    <option value="" className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">-- Selecciona un servicio del catálogo --</option>
+                    {serviciosCatalogo.map(s => <option key={s.id} value={s.id} className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">{s.nombre} (L {s.costo_hnl})</option>)}
                   </select>
                 </div>
                 <div className="w-40">
-                  <label className="block text-xs font-medium text-brand-700 mb-1">Fecha de Inicio</label>
-                  <input type="date" value={fechaInicioServicio} onChange={e=>setFechaInicioServicio(e.target.value)} className="px-3 py-2 w-full rounded-lg border border-brand-200 bg-white text-sm" />
+                  <label className="block text-xs font-medium text-brand-700 dark:text-brand-400 mb-1">Fecha de Inicio</label>
+                  <input type="date" value={fechaInicioServicio} onChange={e=>setFechaInicioServicio(e.target.value)} className="px-3 py-2 w-full rounded-lg border border-brand-200 dark:border-brand-900/40 bg-[#ffffff] dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm" />
                 </div>
                 <button onClick={handleAssignService} disabled={!nuevoServicioId || saving} className="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-colors disabled:opacity-50 h-9">
                   <Plus size={16}/> Agregar
@@ -412,29 +417,29 @@ export function PacienteDrawer({ isOpen, onClose, pacienteId, onSuccess }: Pacie
               {nuevoServicioId && (
                 <div className="flex flex-col md:flex-row gap-3 px-1 mt-3 mb-2">
                   <div className="flex flex-col gap-1.5 w-full">
-                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Estado del Primer Mes</label>
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Estado del Primer Mes</label>
                     <select 
                       value={estadoPagoInicial} 
                       onChange={e => setEstadoPagoInicial(e.target.value)}
-                      className="px-3 py-2 w-full rounded-lg border border-brand-200 bg-white text-sm text-slate-700 focus:ring-2 focus:ring-brand-500/20 transition-all"
+                      className="px-3 py-2 w-full rounded-lg border border-brand-200 dark:border-brand-900/40 bg-[#f1f5f9] dark:bg-slate-800 text-sm text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-brand-500/20 transition-all"
                     >
-                      <option value="pagado">Ya lo pagó hoy (Se registra el ingreso en caja)</option>
-                      <option value="por_pagar">Por Pagar (Se genera la cuenta como deuda)</option>
+                      <option value="pagado" className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">Ya lo pagó hoy (Se registra el ingreso en caja)</option>
+                      <option value="por_pagar" className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">Por Pagar (Se genera la cuenta como deuda)</option>
                     </select>
                   </div>
 
                   {estadoPagoInicial === 'pagado' && (
                     <div className="flex flex-col gap-1.5 w-full">
-                      <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Método de Pago</label>
+                      <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Método de Pago</label>
                       <select 
                         value={metodoPagoInicial} 
                         onChange={e => setMetodoPagoInicial(e.target.value)}
-                        className="px-3 py-2 w-full rounded-lg border border-emerald-200 bg-white text-sm text-slate-700 focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                        className="px-3 py-2 w-full rounded-lg border border-emerald-200 dark:border-emerald-900/40 bg-[#f1f5f9] dark:bg-slate-800 text-sm text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-emerald-500/20 transition-all"
                       >
-                        <option value="efectivo">Efectivo</option>
-                        <option value="transferencia">Transferencia</option>
-                        <option value="tarjeta de credito/debito">Tarjeta de Crédito/Débito</option>
-                        <option value="cheque">Cheque</option>
+                        <option value="efectivo" className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">Efectivo</option>
+                        <option value="transferencia" className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">Transferencia</option>
+                        <option value="tarjeta de credito/debito" className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">Tarjeta de Crédito/Débito</option>
+                        <option value="cheque" className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">Cheque</option>
                       </select>
                     </div>
                   )}
@@ -445,21 +450,21 @@ export function PacienteDrawer({ isOpen, onClose, pacienteId, onSuccess }: Pacie
                 <h4 className="text-sm font-bold text-slate-700 mb-3">Servicios Actualmente Asignados</h4>
                 <div className="space-y-3">
                   {serviciosAsignados.length === 0 ? (
-                    <p className="text-sm text-slate-500 italic bg-white p-4 rounded-xl border border-slate-100 text-center">No tiene ningún servicio asignado.</p>
+                    <p className="text-sm text-slate-500 italic bg-[#ffffff] dark:bg-slate-800/70 p-4 rounded-xl border border-slate-100 dark:border-slate-800/80 text-center">No tiene ningún servicio asignado.</p>
                   ) : (
                     serviciosAsignados.map(ps => {
                       const srv = serviciosCatalogo.find(srv => srv.id === ps.servicio_id);
                       const isOneTime = srv?.duracion_meses === 0;
                       const isDue = !isOneTime && new Date(ps.fecha_proximo_cobro) <= new Date();
                       return (
-                        <div key={ps.id} className={`bg-white p-4 rounded-xl border ${isDue ? 'border-orange-300 shadow-sm' : 'border-slate-200 shadow-sm'} flex justify-between items-center transition-all`}>
+                        <div key={ps.id} className={`bg-[#ffffff] dark:bg-slate-800/70 p-4 rounded-xl border ${isDue ? 'border-orange-300 dark:border-orange-900/45 shadow-sm' : 'border-slate-200 dark:border-slate-800 shadow-sm'} flex justify-between items-center transition-all`}>
                           <div>
                             <div className="flex items-center gap-2">
-                              <p className="font-semibold text-slate-800">{ps.servicios?.nombre}</p>
-                              {isDue && <span className="bg-orange-100 text-orange-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Por Cobrar</span>}
+                              <p className="font-semibold text-slate-800 dark:text-slate-200">{ps.servicios?.nombre}</p>
+                              {isDue && <span className="bg-orange-100 dark:bg-orange-950/40 text-orange-700 dark:text-orange-400 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Por Cobrar</span>}
                             </div>
-                            <p className="text-xs text-slate-500 mt-0.5">Cobro programado: L {ps.servicios?.costo_hnl}</p>
-                            <p className={`text-xs font-medium mt-1 ${isDue ? 'text-orange-600' : 'text-brand-600'}`}>Siguiente cobro: {parseDateOnly(ps.fecha_proximo_cobro).toLocaleDateString('es-HN')}</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Cobro programado: L {ps.servicios?.costo_hnl}</p>
+                            <p className={`text-xs font-medium mt-1 ${isDue ? 'text-orange-600 dark:text-orange-400' : 'text-brand-600 dark:text-brand-400'}`}>Siguiente cobro: {parseDateOnly(ps.fecha_proximo_cobro).toLocaleDateString('es-HN')}</p>
                             
                             {isDue && (
                               <button 
@@ -507,7 +512,7 @@ export function PacienteDrawer({ isOpen, onClose, pacienteId, onSuccess }: Pacie
                                 loadServiciosAsignados(pacienteId!);
                               }
                             }}
-                            className="text-slate-400 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition-colors self-start"
+                            className="text-slate-400 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors self-start"
                           >
                             <Trash2 size={18}/>
                           </button>
@@ -522,8 +527,8 @@ export function PacienteDrawer({ isOpen, onClose, pacienteId, onSuccess }: Pacie
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-border bg-white flex justify-end gap-3 shrink-0">
-          <button onClick={onClose} className="px-5 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors">
+        <div className="px-6 py-4 border-t border-border bg-white dark:bg-slate-900 flex justify-end gap-3 shrink-0">
+          <button onClick={onClose} className="px-5 py-2 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
             Cerrar
           </button>
           {activeTab === 'perfil' && (
