@@ -5,6 +5,7 @@ import { formatLocalDateInputValue, parseDateOnly } from '@/utils/date';
 import { useCompanyStore } from '@/store/useCompanyStore';
 import { PacienteHistorial } from '@/components/PacienteHistorial';
 import { PacienteMatricula } from '@/components/PacienteMatricula';
+import { toast } from 'sonner';
 
 type ServicioCatalogo = { id: string; nombre: string; costo_hnl: number; duracion_meses: number };
 
@@ -26,7 +27,7 @@ type ServicioAsignadoRow = {
   servicio_id: string;
   fecha_inicio: string;
   fecha_proximo_cobro: string;
-  servicios: { nombre: string | null; costo_hnl: number | null } | null;
+  servicios: { nombre: string | null; costo_hnl: number | null; duracion_meses: number | null } | null;
 };
 
 type PacienteDrawerProps = {
@@ -133,11 +134,14 @@ export function PacienteDrawer({ isOpen, onClose, pacienteId, onSuccess }: Pacie
   const loadServiciosAsignados = useCallback(async (id: string) => {
     const { data } = await supabase
       .from('pacientes_servicios')
-      .select('*, servicios(nombre, costo_hnl)')
+      .select('*, servicios(nombre, costo_hnl, duracion_meses)')
       .eq('paciente_id', id)
       .eq('activo', true)
       .returns<ServicioAsignadoRow[]>();
-    if (data) setServiciosAsignados(data);
+    if (data) {
+      const recurringOnly = data.filter(ps => ps.servicios && (ps.servicios.duracion_meses ?? 0) > 0);
+      setServiciosAsignados(recurringOnly);
+    }
   }, [supabase]);
 
   useEffect(() => {
@@ -266,12 +270,18 @@ export function PacienteDrawer({ isOpen, onClose, pacienteId, onSuccess }: Pacie
         }]);
       }
 
+      const isOneTime = selectedService?.duracion_meses === 0;
+      if (isOneTime) {
+        toast.success(`El servicio único "${selectedService?.nombre}" ha sido asignado correctamente a ${nombreCompleto}`);
+      } else {
+        toast.success(`El servicio "${selectedService?.nombre}" ha sido asignado correctamente a ${nombreCompleto}`);
+      }
       setNuevoServicioId('');
       setEstadoPagoInicial('pagado');
       setMetodoPagoInicial('efectivo');
       loadServiciosAsignados(pacienteId);
     } else {
-      alert(error.message);
+      toast.error(`Error al asignar el servicio "${selectedService?.nombre}": ${error.message}`);
     }
     setSaving(false);
   };

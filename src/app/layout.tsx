@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { Toaster } from "sonner";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -25,7 +26,10 @@ export default function RootLayout({
               "(function(){try{var t=localStorage.getItem('alcheque-theme')||'light';var r=document.documentElement;if(t==='dark')r.classList.add('dark');else r.classList.remove('dark');}catch(e){}})();",
           }}
         />
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          {children}
+          <Toaster richColors position="top-right" closeButton />
+        </ThemeProvider>
       </body>
     </html>
   );

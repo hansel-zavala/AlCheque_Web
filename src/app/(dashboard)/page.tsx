@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { createClient } from '@/utils/supabase/client';
-import { Loader2, ArrowRight } from 'lucide-react';
+import { Loader2, ArrowRight, Search, Users } from 'lucide-react';
 import { useCompanyStore } from '@/store/useCompanyStore';
 import Link from 'next/link';
 import { formatLocalDateInputValue, parseDateOnly } from '@/utils/date';
@@ -38,6 +38,27 @@ type CuentaSaldoRow = {
   monto_pagado: string;
 };
 
+type ServicioInfo = {
+  nombre: string | null;
+  costo_hnl: number | null;
+  duracion_meses: number | null;
+};
+
+type PacienteServicioRow = {
+  id: string;
+  activo: boolean;
+  fecha_proximo_cobro: string;
+  servicios: ServicioInfo | null;
+};
+
+type PacienteConPlan = {
+  id: string;
+  codigo_interno: string | null;
+  nombre_completo: string | null;
+  grado_escolar: string | null;
+  pacientes_servicios: PacienteServicioRow[];
+};
+
 export default function DashboardPage() {
   // Avoid recreating the Supabase client on every render.
   const supabase = useMemo(() => createClient(), []);
@@ -48,6 +69,8 @@ export default function DashboardPage() {
   const [chartData, setChartData] = useState<ChartBucket[]>([]);
   const [vencimientos, setVencimientos] = useState<CuentaVencimientoRow[]>([]);
   const [totalPorCobrar, setTotalPorCobrar] = useState(0);
+  const [pacientes, setPacientes] = useState<PacienteConPlan[]>([]);
+  const [pacienteSearch, setPacienteSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [isDark, setIsDark] = useState(false);
 
@@ -107,11 +130,40 @@ export default function DashboardPage() {
         .neq('estado', 'pagada')
         .returns<CuentaSaldoRow[]>();
 
+      const pacientesPromise = supabase
+        .from('pacientes')
+        .select(`
+          id,
+          codigo_interno,
+          nombre_completo,
+          grado_escolar,
+          pacientes_servicios(
+            id,
+            activo,
+            fecha_proximo_cobro,
+            servicios(
+              nombre,
+              costo_hnl,
+              duracion_meses
+            )
+          )
+        `)
+        .eq('company_id', activeCompany.id)
+        .eq('activo', true)
+        .order('nombre_completo', { ascending: true })
+        .returns<PacienteConPlan[]>();
+
       const [
         { data: transacciones, error: transError },
         { data: cuentasData, error: cuentasError },
         { data: allCuentas, error: totalError },
-      ] = await Promise.all([transaccionesPromise, vencimientosPromise, totalPorCobrarPromise]);
+        { data: pacientesData, error: pacientesError },
+      ] = await Promise.all([
+        transaccionesPromise,
+        vencimientosPromise,
+        totalPorCobrarPromise,
+        pacientesPromise
+      ]);
 
       if (transError) {
         console.error(transError);
@@ -173,6 +225,19 @@ export default function DashboardPage() {
         setTotalPorCobrar(total);
       }
 
+      if (pacientesError) {
+        console.error(pacientesError);
+      }
+      if (pacientesData) {
+        // Filtrar en memoria por pacientes que tengan al menos un plan/servicio activo recurrente
+        const activeWithPlan = pacientesData.filter(p => 
+          p.pacientes_servicios && p.pacientes_servicios.some(ps => 
+            ps.activo && ps.servicios && (ps.servicios.duracion_meses ?? 0) > 0
+          )
+        );
+        setPacientes(activeWithPlan);
+      }
+
       setLoading(false);
     }
 
@@ -220,6 +285,15 @@ export default function DashboardPage() {
 
     return { ingresosMes: ing, egresosMes: eg, saldoNeto: ing - eg };
   }, [allTransacciones, timeFilter]);
+
+  const filteredPacientes = useMemo(() => {
+    return pacientes.filter(p => {
+      const name = p.nombre_completo?.toLowerCase() || '';
+      const code = p.codigo_interno?.toLowerCase() || '';
+      const query = pacienteSearch.toLowerCase();
+      return name.includes(query) || code.includes(query);
+    });
+  }, [pacientes, pacienteSearch]);
 
   if (loading) {
     return (
@@ -379,6 +453,154 @@ export default function DashboardPage() {
             <span>Ver todas las transacciones</span>
             <ArrowRight size={16} />
           </Link>
+        </div>
+      </div>
+
+      {/* Active Patients with Plan Widget */}
+      <div className="grid grid-cols-1 gap-6 animate-slide-up">
+        <div className={"bg-surface p-6 rounded-xl shadow-sm border " + (isDark ? 'border-white/10' : 'border-border')}>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 bg-brand-500/10 rounded-lg text-brand-600">
+                <Users size={20} className="animate-pulse" />
+              </div>
+              <div>
+                <h3 className={"text-lg font-bold flex items-center gap-2 " + (isDark ? 'text-foreground' : 'text-slate-800')}>
+                  Pacientes Activos con Plan
+                </h3>
+                <p className={"text-xs mt-0.5 " + (isDark ? 'text-slate-400' : 'text-slate-500')}>
+                  Lista de estudiantes con servicios activos y sus respectivos cobros.
+                </p>
+              </div>
+            </div>
+            
+            {/* Search and Count */}
+            <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+              <div className="relative w-full sm:w-64">
+                <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  value={pacienteSearch}
+                  onChange={(e) => setPacienteSearch(e.target.value)}
+                  placeholder="Buscar paciente o expediente..."
+                  className={
+                    "pl-9 pr-4 py-2 w-full text-sm rounded-xl border focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-all " +
+                    (isDark
+                      ? 'bg-slate-900 border-white/10 focus:border-brand-500 text-foreground'
+                      : 'bg-slate-50 border-slate-200 focus:bg-white focus:border-brand-500 text-slate-700')
+                  }
+                />
+              </div>
+              <span className={`px-3 py-1.5 rounded-full text-xs font-bold font-mono whitespace-nowrap shadow-sm border ` + (
+                isDark 
+                  ? 'bg-brand-950/30 text-brand-400 border-brand-900/40' 
+                  : 'bg-brand-50 text-brand-700 border-brand-100'
+              )}>
+                {filteredPacientes.length} {filteredPacientes.length === 1 ? 'Paciente' : 'Pacientes'}
+              </span>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className={"border-b text-xs uppercase tracking-wider font-semibold " + (isDark ? 'border-white/10 text-slate-400' : 'border-slate-100 text-slate-500')}>
+                  <th className="py-3 px-4 w-32">Código</th>
+                  <th className="py-3 px-4">Paciente</th>
+                  <th className="py-3 px-4 hidden md:table-cell">Nivel / Grado</th>
+                  <th className="py-3 px-4">Planes / Servicios Asignados</th>
+                  <th className="py-3 px-4 text-right">Monto Total Mensual</th>
+                </tr>
+              </thead>
+              <tbody className={"divide-y " + (isDark ? 'divide-white/5' : 'divide-slate-100')}>
+                {filteredPacientes.map((p) => {
+                  const activeServices = p.pacientes_servicios.filter(ps => 
+                    ps.activo && ps.servicios && (ps.servicios.duracion_meses ?? 0) > 0
+                  );
+                  const totalMensual = activeServices.reduce((sum, ps) => sum + (ps.servicios?.costo_hnl || 0), 0);
+                  
+                  return (
+                    <tr 
+                      key={p.id} 
+                      className={
+                        "group transition-all hover:bg-slate-500/5 " +
+                        (isDark ? 'text-slate-300' : 'text-slate-700')
+                      }
+                    >
+                      <td className="py-4 px-4 font-mono text-xs font-semibold">
+                        {p.codigo_interno || 'N/A'}
+                      </td>
+                      <td className="py-4 px-4 font-medium">
+                        <Link 
+                          href={`/pacientes`}
+                          className="hover:text-brand-600 transition-colors flex flex-col"
+                        >
+                          <span className={isDark ? 'text-foreground font-semibold' : 'text-slate-800 font-semibold'}>
+                            {p.nombre_completo}
+                          </span>
+                          <span className="text-xs text-slate-400 md:hidden mt-0.5">
+                            {p.grado_escolar || '-'}
+                          </span>
+                        </Link>
+                      </td>
+                      <td className="py-4 px-4 text-sm hidden md:table-cell">
+                        {p.grado_escolar ? (
+                          <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ` + (
+                            isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'
+                          )}>
+                            {p.grado_escolar}
+                          </span>
+                        ) : '-'}
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="flex flex-wrap gap-1.5 max-w-lg">
+                          {activeServices.map((ps) => (
+                            <span 
+                              key={ps.id} 
+                              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold shadow-sm border ` + (
+                                isDark
+                                  ? 'bg-slate-900 border-white/5 text-slate-200'
+                                  : 'bg-white border-slate-200 text-slate-700'
+                              )}
+                              title={`Próximo cobro: ${parseDateOnly(ps.fecha_proximo_cobro).toLocaleDateString('es-HN')}`}
+                            >
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                              {ps.servicios?.nombre} 
+                              <span className="opacity-60 font-mono">({formatMoney(ps.servicios?.costo_hnl || 0)})</span>
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="py-4 px-4 text-right font-mono font-bold text-sm">
+                        <span className={isDark ? 'text-foreground font-semibold' : 'text-slate-900 font-semibold'}>
+                          {formatMoney(totalMensual)}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+                
+                {filteredPacientes.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="py-12 text-center">
+                      <Users size={32} className="mx-auto text-slate-400 opacity-40 mb-3" />
+                      <p className={"text-sm font-medium " + (isDark ? 'text-slate-400' : 'text-slate-500')}>
+                        No se encontraron pacientes activos con plan.
+                      </p>
+                      {pacientes.length > 0 && pacienteSearch && (
+                        <button 
+                          onClick={() => setPacienteSearch('')}
+                          className="mt-2 text-xs font-semibold text-brand-600 hover:underline"
+                        >
+                          Limpiar búsqueda
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
