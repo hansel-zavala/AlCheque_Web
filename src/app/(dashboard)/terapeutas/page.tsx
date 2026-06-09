@@ -6,8 +6,8 @@ import { createClient } from '@/utils/supabase/client';
 import { useCompanyStore } from '@/store/useCompanyStore';
 import dynamic from 'next/dynamic';
 
-const TerapeutaDrawer = dynamic(
-  () => import('@/components/TerapeutaDrawer').then((m) => m.TerapeutaDrawer),
+const TerapeutaModal = dynamic(
+  () => import('@/components/TerapeutaModal').then((m) => m.TerapeutaModal),
   { ssr: false }
 );
 
@@ -37,7 +37,7 @@ export default function TerapeutasPage() {
   const [resumenes, setResumenes] = useState<ResumenMes[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const now = new Date();
@@ -106,7 +106,7 @@ export default function TerapeutasPage() {
           />
         </div>
         <button
-          onClick={() => { setSelectedId(null); setIsDrawerOpen(true); }}
+          onClick={() => { setSelectedId(null); setIsModalOpen(true); }}
           className="flex items-center space-x-2 bg-slate-900 dark:bg-slate-800 text-white px-5 py-2.5 rounded-xl hover:bg-slate-800 dark:hover:bg-slate-700 transition-all shadow-sm border border-transparent dark:border-border"
         >
           <UserPlus size={18} />
@@ -144,7 +144,7 @@ export default function TerapeutasPage() {
                 const saldo = t.salario_mensual - (res?.monto_pagado ?? 0);
                 return (
                   <tr key={t.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/40 border-b border-border/50 transition-colors cursor-pointer group"
-                    onClick={() => { setSelectedId(t.id); setIsDrawerOpen(true); }}>
+                    onClick={() => { setSelectedId(t.id); setIsModalOpen(true); }}>
                     <td className="p-4">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-full bg-brand-100 dark:bg-brand-950/50 flex items-center justify-center shrink-0">
@@ -189,9 +189,9 @@ export default function TerapeutasPage() {
         </table>
       </div>
 
-      <TerapeutaDrawer
-        isOpen={isDrawerOpen}
-        onClose={() => setIsDrawerOpen(false)}
+      <TerapeutaModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
         terapeutaId={selectedId}
         onSuccess={fetchData}
       />

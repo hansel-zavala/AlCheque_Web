@@ -30,14 +30,14 @@ type ServicioAsignadoRow = {
   servicios: { nombre: string | null; costo_hnl: number | null; duracion_meses: number | null } | null;
 };
 
-type PacienteDrawerProps = {
+type PacienteModalProps = {
   isOpen: boolean;
   onClose: () => void;
   pacienteId: string | null;
   onSuccess: () => void;
 };
 
-export function PacienteDrawer({ isOpen, onClose, pacienteId, onSuccess }: PacienteDrawerProps) {
+export function PacienteModal({ isOpen, onClose, pacienteId, onSuccess }: PacienteModalProps) {
   const supabase = useMemo(() => createClient(), []);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -289,9 +289,9 @@ export function PacienteDrawer({ isOpen, onClose, pacienteId, onSuccess }: Pacie
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/50 backdrop-blur-sm transition-opacity" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm transition-opacity" onClick={onClose}>
       <div 
-        className="w-full max-w-2xl bg-white h-full shadow-2xl flex flex-col animate-slide-left overflow-hidden"
+        className="w-full max-w-2xl bg-white dark:bg-slate-950 rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-slide-up"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}

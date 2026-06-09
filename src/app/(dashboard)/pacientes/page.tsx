@@ -6,8 +6,8 @@ import { createClient } from '@/utils/supabase/client';
 import dynamic from 'next/dynamic';
 import { useCompanyStore } from '@/store/useCompanyStore';
 
-const PacienteDrawer = dynamic(
-  () => import('@/components/PacienteDrawer').then((m) => m.PacienteDrawer),
+const PacienteModal = dynamic(
+  () => import('@/components/PacienteModal').then((m) => m.PacienteModal),
   { ssr: false }
 );
 
@@ -25,7 +25,7 @@ export default function PacientesPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPacienteId, setSelectedPacienteId] = useState<string | null>(null);
   const { activeCompany } = useCompanyStore();
 
@@ -46,9 +46,9 @@ export default function PacientesPage() {
     fetchPacientes();
   }, [fetchPacientes]);
 
-  const handleOpenDrawer = (id: string | null = null) => {
+  const handleOpenModal = (id: string | null = null) => {
     setSelectedPacienteId(id);
-    setIsDrawerOpen(true);
+    setIsModalOpen(true);
   };
 
   const filteredPacientes = pacientes.filter(p => 
@@ -71,7 +71,7 @@ export default function PacientesPage() {
         </div>
         
         <button 
-          onClick={() => handleOpenDrawer()}
+          onClick={() => handleOpenModal()}
           className="flex items-center space-x-2 bg-slate-900 text-white px-5 py-2.5 rounded-xl hover:bg-slate-800 transition-all shadow-sm hover:shadow"
         >
           <UserPlus size={18} />
@@ -108,7 +108,7 @@ export default function PacientesPage() {
               </tr>
             ) : (
               filteredPacientes.map(p => (
-                <tr key={p.id} className="hover:bg-slate-50 transition-colors group cursor-pointer" onClick={() => handleOpenDrawer(p.id)}>
+                <tr key={p.id} className="hover:bg-slate-50 transition-colors group cursor-pointer" onClick={() => handleOpenModal(p.id)}>
                   <td className="p-4 font-mono text-sm text-slate-500">{p.codigo_interno || 'N/A'}</td>
                   <td className="p-4 font-medium text-slate-800">{p.nombre_completo}</td>
                   <td className="p-4 text-slate-600 text-sm">{p.nombre_tutor || 'No registrado'}</td>
@@ -119,7 +119,7 @@ export default function PacientesPage() {
                   </td>
                   <td className="p-4 text-right space-x-2">
                     <button 
-                      onClick={(e) => { e.stopPropagation(); handleOpenDrawer(p.id); }}
+                      onClick={(e) => { e.stopPropagation(); handleOpenModal(p.id); }}
                       className="text-brand-600 hover:text-brand-800 transition-colors p-2 rounded-lg hover:bg-brand-50" 
                       title="Ver Perfil Completo"
                     >
@@ -133,9 +133,9 @@ export default function PacientesPage() {
         </table>
       </div>
 
-      <PacienteDrawer 
-        isOpen={isDrawerOpen} 
-        onClose={() => setIsDrawerOpen(false)} 
+      <PacienteModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
         pacienteId={selectedPacienteId}
         onSuccess={() => {
           fetchPacientes();

@@ -36,14 +36,14 @@ type AbonoSalario = {
 
 const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
-interface TerapeutaDrawerProps {
+interface TerapeutaModalProps {
   isOpen: boolean;
   onClose: () => void;
   terapeutaId: string | null;
   onSuccess: () => void;
 }
 
-export function TerapeutaDrawer({ isOpen, onClose, terapeutaId, onSuccess }: TerapeutaDrawerProps) {
+export function TerapeutaModal({ isOpen, onClose, terapeutaId, onSuccess }: TerapeutaModalProps) {
   const supabase = useMemo(() => createClient(), []);
   const { activeCompany } = useCompanyStore();
   const [loading, setLoading] = useState(false);
@@ -215,8 +215,8 @@ export function TerapeutaDrawer({ isOpen, onClose, terapeutaId, onSuccess }: Ter
   const pagoMesActual = pagos.find(p => p.mes === mesActual && p.anio === anioActual);
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/50 backdrop-blur-sm" onClick={onClose}>
-      <div className="w-full max-w-2xl bg-white dark:bg-slate-950 h-full shadow-2xl flex flex-col animate-slide-left overflow-hidden" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm transition-opacity" onClick={onClose}>
+      <div className="w-full max-w-2xl bg-white dark:bg-slate-950 rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-slide-up" onClick={e => e.stopPropagation()}>
         
         {/* Header */}
         <div className="px-6 py-4 border-b border-border bg-slate-50 dark:bg-slate-900/60 flex justify-between items-center shrink-0">

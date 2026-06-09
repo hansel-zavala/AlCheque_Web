@@ -1,4 +1,4 @@
 {
     "explorer.compactFolders": false,
-    "workbench.sideBar.location": "right"
+    "workbench.sideBar.location": "left"
 }
