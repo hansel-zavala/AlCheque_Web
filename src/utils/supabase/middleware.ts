@@ -33,12 +33,14 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  /*
   // Si intentan entrar a cualquier ruta raíz/dashboard (que no sea login) sin sesión, redirige
   if (!user && !request.nextUrl.pathname.startsWith('/login')) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
   }
+  */
 
   // Si ya están logueados e intentan entrar al login, redirige al dashboard
   if (user && request.nextUrl.pathname.startsWith('/login')) {
